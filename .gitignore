@@ -1,0 +1,7 @@
+*.asv
+*.bsp
+*.mp4
+*.svg
+*.tls.pc.txt
+
+bodyTextures/
