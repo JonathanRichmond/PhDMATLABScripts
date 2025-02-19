@@ -1,0 +1,14 @@
+%%% SunAngleColor
+%%% Jonathan Richmond
+%%% C: 19 February 2025
+
+function [colors] = SunAngleColor(values)
+
+valuesWrapped = phasewrap(values);
+colorMap = phasemap(1001);
+valueMap = linspace(-pi, pi, 1001);
+colors = zeros(length(values), 3);
+for i = 1:length(values)
+    [~, colorIndex] = min(abs(valueMap-valuesWrapped(i)));
+    colors(i,:) = colorMap(colorIndex,:);
+end

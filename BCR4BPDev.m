@@ -1,9 +1,9 @@
-%%% Plot CR3BP Trajectory
+%%% BCR4BPDev.jl
 %%% Jonathan Richmond
-%%% C: 17 January 2025
+%%% C: 19 February 2025
 
 clear
-load("../PhDScripts/Output/CR3BPTraj.mat")
+load("../PhDScripts/Output/BCR4BPDev.mat")
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -61,7 +61,7 @@ b4 = sqrt(3)/2;
 b5 = -b4;
 
 %% Plot
-fig = figure("Position", [200 100 1200 750]);
+fig1 = figure("Position", [200 100 1200 750]);
 Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 hold on
@@ -72,13 +72,17 @@ scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "L_{2}")
 scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "L_{3}")
 scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "L_{4}")
 scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "L_{5}")
-plot3(trajCR3BP.x, trajCR3BP.y, trajCR3BP.z, 'DisplayName', "Orbit")
+plot3(trajCR3BP.x, trajCR3BP.y, trajCR3BP.z, 'DisplayName', "CR3BP Orbit")
+scatter3(trajBCR4BP12.x, trajBCR4BP12.y, trajBCR4BP12.z, 10*ones(length(trajBCR4BP12.t), 1), SunAngleColor(trajBCR4BP12.theta4), 'filled', 'DisplayName', 'BCR4BP E-M Traj.')
 axis equal
 grid on
-xlabel("x [ndim]")
-ylabel("y [ndim]")
-zlabel("z [ndim]")
-title("L_{1} Lyapunov Orbit")
-leg = legend('Location', 'bestoutside');
+xlabel("x [EM ndim]")
+ylabel("y [EM ndim]")
+zlabel("z [EM ndim]")
+title("L_{1} Lyapunov: \theta_{S} = "+num2str(rad2deg(trajBCR4BP12.theta4(1)), '%.0f')+" deg")
+leg = legend('Location', 'northeastoutside');
+phasemap;
+phasebar('Location', 'northeast', 'Size', 0.25)
 set(gca, 'Color', 'k');
 hold off
+exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
