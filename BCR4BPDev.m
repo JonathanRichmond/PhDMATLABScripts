@@ -93,19 +93,19 @@ scatter3(a3EM, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
 scatter3(a45EM, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
 scatter3(a45EM, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
 plot3(orbitCR3BP.x, orbitCR3BP.y, orbitCR3BP.z, 'DisplayName', "CR3BP Orbit")
-scatter3(trajBCR4BP12.x, trajBCR4BP12.y, trajBCR4BP12.z, 10*ones(length(trajBCR4BP12.t), 1), angleColor(trajBCR4BP12.theta4), 'filled', 'DisplayName', 'BCR4BP E-M Traj.')
+scatter3(trajBCR4BPEM.x, trajBCR4BPEM.y, trajBCR4BPEM.z, 10*ones(length(trajBCR4BPEM.t), 1), angleColor(trajBCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Prop.")
+plot3(validBCR4BPEM.x, validBCR4BPEM.y, validBCR4BPEM.z, 'DisplayName', "BCR4BP S$B_{1}$ Trans.")
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon: $\theta_{S,0}="+num2str(rad2deg(trajBCR4BP12.theta4(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+title("Earth-Moon: $\theta_{S,0}="+num2str(rad2deg(trajBCR4BPEM.theta4(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.25)
 set(gca, 'Color', 'k');
 hold off
-%%% ADD ARROWS!!!!!!!!
 % exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
 
 fig2 = figure("Position", [200 100 1200 750]);
@@ -113,13 +113,14 @@ B1 = plot3DBody("Earth", RE/lstarSB1, [1-muSB1, 0, 0]);
 set(B1, 'DisplayName', "$B_{1}$")
 hold on
 fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
-scatter3(trajBCR4BP41.x, trajBCR4BP41.y, trajBCR4BP41.z, 10*ones(length(trajBCR4BP41.t), 1), angleColor(trajBCR4BP41.theta2), 'filled', 'DisplayName', 'BCR4BP S-$B_{1}$ Traj.')
+scatter3(trajBCR4BPSB1.x, trajBCR4BPSB1.y, trajBCR4BPSB1.z, 10*ones(length(trajBCR4BPSB1.t), 1), angleColor(trajBCR4BPSB1.theta2), 'filled', 'DisplayName', "BCR4BP EM Trans.")
+plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
 axis equal
 grid on
 xlabel("$\underline{x}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
 ylabel("$\underline{y}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
 zlabel("$\underline{z}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
-title("Sun-$B_{1}$: $\theta_{M,0}="+num2str(rad2deg(trajBCR4BP41.theta2(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+title("Sun-$B_{1}$: $\theta_{M,0}="+num2str(rad2deg(trajBCR4BPSB1.theta2(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.25)
