@@ -5,84 +5,124 @@
 clear
 load("../PhDScripts/Output/BCR4BPDev.mat")
 
-%% Earth-Moon Data
+%% Body Data
+% Earth
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
 mE = gmE/6.67384E-20; % Earth mass [kg]
 RE = 6.3710083666666660E3; % Earth radius [km]
 
+% Moon
 gmm = 4.9028000661637961E3; % Moon gravitational parameter [km^3/s^2]
 mm = gmm/6.67384E-20; % Moon mass [kg]
 Rm = 1.7374000000000003E3; % Moon radius [km]
 
-mu = gmm/(gmE+gmm); % Mass ratio
-mstar = (gmE+gmm)/6.67384E-20; % Characteristic mass [kg]
-lstar = 3.8474799201129237E5; % Characteristic length [km]
-tstar = sqrt(lstar^3/(gmE+gmm)); % Characteristic time [s]
+% Sun
+gmS = 1.3271244004193930E11; % Sun gravitational parameter [km^3/s^2]
+mS = gmS/6.67384E-20; % Sun mass [kg]
+RS = 6.9600000000000000E5; % Sun radius [km]
+
+% B1
+gmB1 = gmE+gmm; %Barycenter gravitational parameter [km^3/s^2]
+mB1 = gmB1/6.67384E-20; % Barycenter mass [kg]
+
+%% Earth-Moon Data
+mstarEM = (gmE+gmm)/6.67384E-20; % Characteristic mass [kg]
+lstarEM = 3.8474799201129237E5; % Characteristic length [km]
+tstarEM = sqrt(lstarEM^3/(gmE+gmm)); % Characteristic time [s]
+muEM = gmm/(gmE+gmm); % Mass ratio
+
+m_S = mS/mstarEM;
+a_S = 1.4959789401764473E8/lstarEM;
+
+%% Sun-B1 Data
+mstarSB1 = mstarEM*(m_S+1); % Characteristic mass [kg]
+lstarSB1 = lstarEM*a_S; % Characteristic length [km]
+tstarSB1 = sqrt(lstarSB1^3/(gmB1+gmS)); % Characteristic time [s]
+muSB1 = mstarEM/mstarSB1;
+
+a_M = (1-muEM)*lstarEM/lstarSB1;
 
 %% Libration Points
-g1(1) = mu;
+g1 = muEM;
 delg1 = 1;
-i = 0;
 while abs(delg1) > eps
-    f = ((1-mu)/((1-g1(i+1))^2))-(mu/(g1(i+1)^2))-1+mu+g1(i+1);
-    fprime = ((2*(1-mu))/((1-g1(i+1))^3))+((2*mu)/(g1(i+1)^3))+1;
-    g1(i+2) = g1(i+1)-(f/fprime);
-    delg1 = g1(i+2)-g1(i+1);
-    i = i+1;
+    f = ((1-muEM)/((1-g1)^2))-(muEM/(g1^2))-1+muEM+g1;
+    fprime = ((2*(1-muEM))/((1-g1)^3))+((2*muEM)/(g1^3))+1;
+    g1New = g1-(f/fprime);
+    delg1 = g1New-g1;
+    g1 = g1New;
 end
-a1 = 1-mu-g1(end);
+a1EM = 1-muEM-g1;
 
-g2(1) = mu;
+g2 = muEM;
 delg2 = 1;
-i = 0;
 while abs(delg2) > eps
-    f = ((1-mu)/((1+g2(i+1))^2))+(mu/(g2(i+1)^2))-1+mu-g2(i+1);
-    fprime = ((-2*(1-mu))/((1+g2(i+1))^3))-((2*mu)/(g2(i+1)^3))-1;
-    g2(i+2) = g2(i+1)-(f/fprime);
-    delg2 = g2(i+2)-g2(i+1);
-    i = i+1;
+    f = ((1-muEM)/((1+g2)^2))+(muEM/(g2^2))-1+muEM-g2;
+    fprime = ((-2*(1-muEM))/((1+g2)^3))-((2*muEM)/(g2^3))-1;
+    g2New = g2-(f/fprime);
+    delg2 = g2New-g2;
+    g2 = g2New;
 end
-a2 = 1-mu+g2(end);
+a2EM = 1-muEM+g2;
 
-g3(1) = mu;
+g3 = muEM;
 delg3 = 1;
-i = 0;
 while abs(delg3) > eps
-    f = ((1-mu)/(g3(i+1)^2))+(mu/((1+g3(i+1))^2))-mu-g3(i+1);
-    fprime = ((-2*(1-mu))/(g3(i+1)^3))-((2*mu)/((1+g3(i+1))^3))-1;
-    g3(i+2) = g3(i+1)-(f/fprime);
-    delg3 = g3(i+2)-g3(i+1);
-    i = i+1;
+    f = ((1-muEM)/(g3^2))+(muEM/((1+g3)^2))-muEM-g3;
+    fprime = ((-2*(1-muEM))/(g3^3))-((2*muEM)/((1+g3)^3))-1;
+    g3New = g3-(f/fprime);
+    delg3 = g3New-g3;
+    g3 = g3New;
 end
-a3 = -1*mu-g3(end);
+a3EM = -1*muEM-g3;
 
-a45 = 0.5-mu;
+a45EM = 0.5-muEM;
 b4 = sqrt(3)/2;
 b5 = -b4;
 
-%% Plot
+%% Plots
 fig1 = figure("Position", [200 100 1200 750]);
-Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
+Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 hold on
-Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
+Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-scatter3(a1, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "L_{1}")
-scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "L_{2}")
-scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "L_{3}")
-scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "L_{4}")
-scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "L_{5}")
-plot3(trajCR3BP.x, trajCR3BP.y, trajCR3BP.z, 'DisplayName', "CR3BP Orbit")
-scatter3(trajBCR4BP12.x, trajBCR4BP12.y, trajBCR4BP12.z, 10*ones(length(trajBCR4BP12.t), 1), SunAngleColor(trajBCR4BP12.theta4), 'filled', 'DisplayName', 'BCR4BP E-M Traj.')
+scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
+scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
+scatter3(a3EM, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
+scatter3(a45EM, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
+scatter3(a45EM, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
+plot3(orbitCR3BP.x, orbitCR3BP.y, orbitCR3BP.z, 'DisplayName', "CR3BP Orbit")
+scatter3(trajBCR4BP12.x, trajBCR4BP12.y, trajBCR4BP12.z, 10*ones(length(trajBCR4BP12.t), 1), angleColor(trajBCR4BP12.theta4), 'filled', 'DisplayName', 'BCR4BP E-M Traj.')
 axis equal
 grid on
-xlabel("x [EM ndim]")
-ylabel("y [EM ndim]")
-zlabel("z [EM ndim]")
-title("L_{1} Lyapunov: \theta_{S} = "+num2str(rad2deg(trajBCR4BP12.theta4(1)), '%.0f')+" deg")
-leg = legend('Location', 'northeastoutside');
+xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+title("Earth-Moon: $\theta_{S,0}="+num2str(rad2deg(trajBCR4BP12.theta4(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.25)
 set(gca, 'Color', 'k');
 hold off
-exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
+%%% ADD ARROWS!!!!!!!!
+% exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
+
+fig2 = figure("Position", [200 100 1200 750]);
+B1 = plot3DBody("Earth", RE/lstarSB1, [1-muSB1, 0, 0]);
+set(B1, 'DisplayName', "$B_{1}$")
+hold on
+fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
+scatter3(trajBCR4BP41.x, trajBCR4BP41.y, trajBCR4BP41.z, 10*ones(length(trajBCR4BP41.t), 1), angleColor(trajBCR4BP41.theta2), 'filled', 'DisplayName', 'BCR4BP S-$B_{1}$ Traj.')
+axis equal
+grid on
+xlabel("$\underline{x}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
+ylabel("$\underline{y}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
+zlabel("$\underline{z}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
+title("Sun-$B_{1}$: $\theta_{M,0}="+num2str(rad2deg(trajBCR4BP41.theta2(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+phasemap;
+phasebar('Location', 'northeast', 'Size', 0.25)
+set(gca, 'Color', 'k');
+hold off
+% exportgraphics(fig2, 'BCR4BPDev_2.png', 'BackgroundColor', 'k')

@@ -1,8 +1,8 @@
-%%% SunAngleColor
+%%% angleColor
 %%% Jonathan Richmond
 %%% C: 19 February 2025
 
-function [colors] = SunAngleColor(values)
+function [colors] = angleColor(values)
 
 valuesWrapped = phasewrap(values);
 colorMap = phasemap(1001);
