@@ -3,7 +3,9 @@
 %%% C: 17 January 2025
 
 clear
-load("../PhDScripts/Output/CR3BPTraj.mat")
+trajs = load('../PhDScripts/Output/CR3BPTraj.mat');
+trajNames = fieldnames(trajs);
+numSegs = length(trajNames);
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -61,24 +63,29 @@ b4 = sqrt(3)/2;
 b5 = -b4;
 
 %% Plot
-fig = figure("Position", [200 100 1200 750]);
-Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-hold on
+fig1 = figure("Position", [200 100 1200 750]);
+% Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% hold on
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-scatter3(a1, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "L_{1}")
-scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "L_{2}")
-scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "L_{3}")
-scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "L_{4}")
-scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "L_{5}")
-plot3(trajCR3BP.x, trajCR3BP.y, trajCR3BP.z, 'DisplayName', "Orbit")
+hold on
+scatter3(a1, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
+scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
+% scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
+% scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
+% scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
+for j = 1:numSegs
+    plot3(trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 'b', 'HandleVisibility', 'off')
+    scatter3(trajs.(trajNames{j}).x(1), trajs.(trajNames{j}).y(1), trajs.(trajNames{j}).z(1), 50, 'w', 'filled', 'HandleVisibility', 'off')
+end
 axis equal
 grid on
-xlabel("x [ndim]")
-ylabel("y [ndim]")
-zlabel("z [ndim]")
-title("L_{1} Lyapunov Orbit")
-leg = legend('Location', 'bestoutside');
+xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+title("Spatial Cycler", 'Interpreter', 'latex')
+leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 hold off
+% exportgraphics(fig1, 'PlotCR3BPTraj_1.png', 'BackgroundColor', 'k')
