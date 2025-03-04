@@ -82,9 +82,9 @@ b5 = -b4;
 
 %% Plots
 fig1 = figure("Position", [200 100 1200 750]);
+hold on
 Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
-hold on
 Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
 scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
@@ -105,13 +105,14 @@ legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.25)
 set(gca, 'Color', 'k');
+view(3)
 hold off
 % exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
 
 fig2 = figure("Position", [200 100 1200 750]);
+hold on
 B1 = plot3DBody("Earth", RE/lstarSB1, [1-muSB1, 0, 0]);
 set(B1, 'DisplayName', "$B_{1}$")
-hold on
 fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
 scatter3(trajBCR4BPSB1.x, trajBCR4BPSB1.y, trajBCR4BPSB1.z, 10*ones(length(trajBCR4BPSB1.t), 1), angleColor(trajBCR4BPSB1.theta2), 'filled', 'DisplayName', "BCR4BP EM Trans.")
 plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
@@ -125,5 +126,6 @@ legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.25)
 set(gca, 'Color', 'k');
+view(3)
 hold off
 % exportgraphics(fig2, 'BCR4BPDev_2.png', 'BackgroundColor', 'k')

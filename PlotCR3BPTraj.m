@@ -64,20 +64,23 @@ b5 = -b4;
 
 %% Plot
 fig1 = figure("Position", [200 100 1200 750]);
+hold on
 % Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
 % set(Earth, 'DisplayName', "Earth")
-% hold on
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-hold on
 scatter3(a1, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
 scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
 % scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
 % scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
 % scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
-for j = 1:numSegs
+for j = 1:numSegs/2
     plot3(trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 'b', 'HandleVisibility', 'off')
     scatter3(trajs.(trajNames{j}).x(1), trajs.(trajNames{j}).y(1), trajs.(trajNames{j}).z(1), 50, 'w', 'filled', 'HandleVisibility', 'off')
+end
+for j = (numSegs/2+1):numSegs
+    plot3(trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 'b', 'HandleVisibility', 'off')
+    scatter3(trajs.(trajNames{j}).x(end), trajs.(trajNames{j}).y(end), trajs.(trajNames{j}).z(end), 50, 'w', 'filled', 'HandleVisibility', 'off')
 end
 axis equal
 grid on
@@ -87,5 +90,10 @@ zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
 title("Spatial Cycler", 'Interpreter', 'latex')
 leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
+view(3)
+ax = gca;
+for j = 1:numSegs
+    plot2DProjections(ax, [2 2 1], trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 0.15);
+end
 hold off
 % exportgraphics(fig1, 'PlotCR3BPTraj_1.png', 'BackgroundColor', 'k')
