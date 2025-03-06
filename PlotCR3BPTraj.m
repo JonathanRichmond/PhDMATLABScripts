@@ -87,7 +87,7 @@ grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Spatial Cycler", 'Interpreter', 'latex')
+title("$L_{1}$ P7HO?", 'Interpreter', 'latex')
 leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 view(3)
