@@ -1,10 +1,14 @@
 %%% BCR4BPDev.jl
 %%% Jonathan Richmond
 %%% C: 19 February 2025
-%%% U: 20 March 2025
+%%% U: 13 March 2025
 
 clear
+addpath('C:\Program Files\MATLAB\mice\src\mice\')
+addpath('C:\Program Files\MATLAB\mice\lib\')
+cspice_furnsh('naif0012.tls')
 load("../PhDScripts/Output/BCR4BPDev.mat")
+initialEpoch = cspice_et2utc(trajBCR4BPEEclipJ2000.t(1), 'C', 0);
 
 %% Body Data
 % Earth
@@ -136,18 +140,20 @@ hold on
 Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Lunar Orbit");
-scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Trans.")
+scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
+plot3(trajCR3BPEclipJ2000.x, trajCR3BPEclipJ2000.y, trajCR3BPEclipJ2000.z, 'DisplayName', "CR3BP Traj.")
 axis equal
 grid on
 xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Centered Ecliptic J2000", 'Interpreter', 'latex')
+title("Earth-Centered Ecliptic J2000: "+initialEpoch, 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k')
 view(3)
+% view(2)
 hold off
 % exportgraphics(fig3, 'BCR4BPDev_3.png', 'BackgroundColor', 'k')
 
@@ -156,13 +162,13 @@ hold on
 Sun = plot3DBody("Sun", RS/lstarEM, [0, 0, 0]);
 set(Sun, 'DisplayName', "Sun")
 fplot(@(t) (lstarSB1/lstarEM)*sin(t), @(t) (lstarSB1/lstarEM)*cos(t), 'w', 'DisplayName', "$B_{1}$ Orbit");
-scatter3(trajBCR4BPSEclipJ2000.x, trajBCR4BPSEclipJ2000.y, trajBCR4BPSEclipJ2000.z, 10*ones(length(trajBCR4BPSEclipJ2000.t), 1), angleColor(trajBCR4BPSEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Trans.")
+scatter3(trajBCR4BPSEclipJ2000.x, trajBCR4BPSEclipJ2000.y, trajBCR4BPSEclipJ2000.z, 10*ones(length(trajBCR4BPSEclipJ2000.t), 1), angleColor(trajBCR4BPSEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
 axis equal
 grid on
 xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
-title("Sun-Centered Ecliptic J2000", 'Interpreter', 'latex')
+title("Sun-Centered Ecliptic J2000: "+initialEpoch, 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.275)
@@ -170,3 +176,5 @@ set(gca, 'Color', 'k')
 view(3)
 hold off
 % exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
+
+cspice_kclear
