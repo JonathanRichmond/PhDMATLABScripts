@@ -9,6 +9,8 @@ addpath('C:\Program Files\MATLAB\mice\lib\')
 cspice_furnsh('naif0012.tls')
 load("../PhDScripts/Output/BCR4BPDev.mat")
 initialEpoch = cspice_et2utc(trajBCR4BPEEclipJ2000.t(1), 'C', 0);
+MoonLoc = [MoonInitialState.x, MoonInitialState.y, MoonInitialState.z]./norm([MoonInitialState.x, MoonInitialState.y, MoonInitialState.z]);
+SunLoc = [SunInitialState.x, SunInitialState.y, SunInitialState.z]./norm([SunInitialState.x, SunInitialState.y, SunInitialState.z]);
 
 %% Body Data
 % Earth
@@ -137,6 +139,26 @@ hold off
 
 fig3 = figure("Position", [200 100 1200 750]);
 hold on
+B1 = plot3DBody("Earth", RE/lstarEM*5, [0, 0, 0]);
+set(B1, 'DisplayName', "$B_{1}$")
+Moon = plot3DBody("Moon", Rm/lstarEM*10, MoonLoc);
+set(Moon, 'DisplayName', "Moon")
+Sun = plot3DBody("Sun", RS/lstarSB1*10, 2*SunLoc);
+set(Sun, 'DisplayName', "Sun")
+axis equal
+grid on
+xlabel("$X$ [km]", 'Interpreter', 'latex')
+ylabel("$Y$ [km]", 'Interpreter', 'latex')
+zlabel("$Z$ [km]", 'Interpreter', 'latex')
+title("Ecliptic J2000 ($B_{1}$): "+initialEpoch, 'Interpreter', 'latex')
+legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+set(gca, 'Color', 'k')
+view(2)
+hold off
+% exportgraphics(fig3, 'BCR4BPDev_3.png', 'BackgroundColor', 'k')
+
+fig4 = figure("Position", [200 100 1200 750]);
+hold on
 Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Lunar Orbit");
@@ -147,20 +169,20 @@ grid on
 xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Centered Ecliptic J2000: "+initialEpoch, 'Interpreter', 'latex')
+title("EJ2000 (Earth): "+initialEpoch(1:11), 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k')
-view(3)
-% view(2)
+% view(3)
+view(90, 0)
 hold off
-% exportgraphics(fig3, 'BCR4BPDev_3.png', 'BackgroundColor', 'k')
+% exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
 
-fig4 = figure("Position", [200 100 1200 750]);
+fig5 = figure("Position", [200 100 1200 750]);
 hold on
-Sun = plot3DBody("Sun", RS/lstarEM, [0, 0, 0]);
-set(Sun, 'DisplayName', "Sun")
+Sun = plot3DBody("Sun", RS/lstarEM*5, [0, 0, 0]);
+set(Sun, 'DisplayName', "Sun (x5)")
 fplot(@(t) (lstarSB1/lstarEM)*sin(t), @(t) (lstarSB1/lstarEM)*cos(t), 'w', 'DisplayName', "$B_{1}$ Orbit");
 scatter3(trajBCR4BPSEclipJ2000.x, trajBCR4BPSEclipJ2000.y, trajBCR4BPSEclipJ2000.z, 10*ones(length(trajBCR4BPSEclipJ2000.t), 1), angleColor(trajBCR4BPSEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
 axis equal
@@ -168,13 +190,13 @@ grid on
 xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
-title("Sun-Centered Ecliptic J2000: "+initialEpoch, 'Interpreter', 'latex')
+title("EJ2000 (Sun): "+initialEpoch(1:11), 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k')
 view(3)
 hold off
-% exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
+% exportgraphics(fig5, 'BCR4BPDev_5.png', 'BackgroundColor', 'k')
 
 cspice_kclear
