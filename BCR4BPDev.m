@@ -1,6 +1,7 @@
 %%% BCR4BPDev.jl
 %%% Jonathan Richmond
 %%% C: 19 February 2025
+%%% U: 20 March 2025
 
 clear
 load("../PhDScripts/Output/BCR4BPDev.mat")
@@ -103,8 +104,8 @@ zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
 title("Earth-Moon: $\theta_{S,0}="+num2str(rad2deg(trajBCR4BPEM.theta4(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
-phasebar('Location', 'northeast', 'Size', 0.25)
-set(gca, 'Color', 'k');
+phasebar('Location', 'northeast', 'Size', 0.275)
+set(gca, 'Color', 'k')
 view(3)
 hold off
 % exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
@@ -124,8 +125,48 @@ zlabel("$\underline{z}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
 title("Sun-$B_{1}$: $\theta_{M,0}="+num2str(rad2deg(trajBCR4BPSB1.theta2(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
-phasebar('Location', 'northeast', 'Size', 0.25)
-set(gca, 'Color', 'k');
+phasebar('Location', 'northeast', 'Size', 0.275)
+set(gca, 'Color', 'k')
 view(3)
 hold off
 % exportgraphics(fig2, 'BCR4BPDev_2.png', 'BackgroundColor', 'k')
+
+fig3 = figure("Position", [200 100 1200 750]);
+hold on
+Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
+set(Earth, 'DisplayName', "Earth")
+fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Lunar Orbit");
+scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Trans.")
+axis equal
+grid on
+xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
+ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
+zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
+title("Earth-Centered Ecliptic J2000", 'Interpreter', 'latex')
+legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+phasemap;
+phasebar('Location', 'northeast', 'Size', 0.275)
+set(gca, 'Color', 'k')
+view(3)
+hold off
+% exportgraphics(fig3, 'BCR4BPDev_3.png', 'BackgroundColor', 'k')
+
+fig4 = figure("Position", [200 100 1200 750]);
+hold on
+Sun = plot3DBody("Sun", RS/lstarEM, [0, 0, 0]);
+set(Sun, 'DisplayName', "Sun")
+fplot(@(t) (lstarSB1/lstarEM)*sin(t), @(t) (lstarSB1/lstarEM)*cos(t), 'w', 'DisplayName', "$B_{1}$ Orbit");
+scatter3(trajBCR4BPSEclipJ2000.x, trajBCR4BPSEclipJ2000.y, trajBCR4BPSEclipJ2000.z, 10*ones(length(trajBCR4BPSEclipJ2000.t), 1), angleColor(trajBCR4BPSEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Trans.")
+axis equal
+grid on
+xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
+ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
+zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
+title("Sun-Centered Ecliptic J2000", 'Interpreter', 'latex')
+legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+phasemap;
+phasebar('Location', 'northeast', 'Size', 0.275)
+set(gca, 'Color', 'k')
+view(3)
+hold off
+% exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
