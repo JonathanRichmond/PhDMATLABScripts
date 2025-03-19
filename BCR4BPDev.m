@@ -1,7 +1,7 @@
 %%% BCR4BPDev.jl
 %%% Jonathan Richmond
 %%% C: 19 February 2025
-%%% U: 13 March 2025
+%%% U: 18 March 2025
 
 clear
 addpath('C:\Program Files\MATLAB\mice\src\mice\')
@@ -40,6 +40,8 @@ muEM = gmm/(gmE+gmm); % Mass ratio
 
 m_S = mS/mstarEM;
 a_S = 1.4959789401764473E8/lstarEM;
+
+MoonEclipJ2000 = rotToP1EclipJ2000(muEM, initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, trajCR3BPEclipJ2000.t, ones(length(trajCR3BPEclipJ2000.t), 1)*[1-muEM, 0, 0, 0, 0, 0]);
 
 %% Sun-B1 Data
 mstarSB1 = mstarEM*(m_S+1); % Characteristic mass [kg]
@@ -147,9 +149,8 @@ Sun = plot3DBody("Sun", RS/lstarSB1*10, 2*SunLoc);
 set(Sun, 'DisplayName', "Sun")
 axis equal
 grid on
-xlabel("$X$ [km]", 'Interpreter', 'latex')
-ylabel("$Y$ [km]", 'Interpreter', 'latex')
-zlabel("$Z$ [km]", 'Interpreter', 'latex')
+xlabel("$X$ [meaningless]", 'Interpreter', 'latex')
+ylabel("$Y$ [meaningless]", 'Interpreter', 'latex')
 title("Ecliptic J2000 ($B_{1}$): "+initialEpoch, 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 set(gca, 'Color', 'k')
@@ -161,8 +162,10 @@ fig4 = figure("Position", [200 100 1200 750]);
 hold on
 Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
-fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Lunar Orbit");
+fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Planar Lunar Orbit");
+plot3(MoonEclipJ2000(:,1), MoonEclipJ2000(:,2), MoonEclipJ2000(:,3), 'w:', 'DisplayName', 'True Lunar Orbit')
 scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
+plot3(trajBCR4BPSB1EEclipJ2000.x, trajBCR4BPSB1EEclipJ2000.y, trajBCR4BPSB1EEclipJ2000.z, 'DisplayName', "BCR4BP S$B_{1}$ Traj.")
 plot3(trajCR3BPEclipJ2000.x, trajCR3BPEclipJ2000.y, trajCR3BPEclipJ2000.z, 'DisplayName', "CR3BP Traj.")
 axis equal
 grid on
@@ -174,8 +177,8 @@ legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
 phasebar('Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k')
-% view(3)
-view(90, 0)
+view(3)
+% view(90, 0)
 hold off
 % exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
 
