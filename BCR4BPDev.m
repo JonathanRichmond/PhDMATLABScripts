@@ -104,6 +104,7 @@ scatter3(a45EM, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
 plot3(orbitCR3BP.x, orbitCR3BP.y, orbitCR3BP.z, 'DisplayName', "CR3BP Orbit")
 scatter3(trajBCR4BPEM.x, trajBCR4BPEM.y, trajBCR4BPEM.z, 10*ones(length(trajBCR4BPEM.t), 1), angleColor(trajBCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Prop.")
 plot3(validBCR4BPEM.x, validBCR4BPEM.y, validBCR4BPEM.z, 'DisplayName', "BCR4BP S$B_{1}$ Trans.")
+plot3(validBCR4BPEM2.x, validBCR4BPEM2.y, validBCR4BPEM2.z, 'DisplayName', "ECLIPJ2000 Trans.")
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
@@ -125,6 +126,7 @@ set(B1, 'DisplayName', "$B_{1}$")
 fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
 scatter3(trajBCR4BPSB1.x, trajBCR4BPSB1.y, trajBCR4BPSB1.z, 10*ones(length(trajBCR4BPSB1.t), 1), angleColor(trajBCR4BPSB1.theta2), 'filled', 'DisplayName', "BCR4BP EM Trans.")
 plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
+plot3(validBCR4BPSB12.x, validBCR4BPSB12.y, validBCR4BPSB12.z, 'DisplayName', "ECLIPJ2000 Trans.")
 axis equal
 grid on
 xlabel("$\underline{x}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
