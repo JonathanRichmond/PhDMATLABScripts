@@ -103,8 +103,8 @@ scatter3(a45EM, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
 scatter3(a45EM, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
 plot3(orbitCR3BP.x, orbitCR3BP.y, orbitCR3BP.z, 'DisplayName', "CR3BP Orbit")
 scatter3(trajBCR4BPEM.x, trajBCR4BPEM.y, trajBCR4BPEM.z, 10*ones(length(trajBCR4BPEM.t), 1), angleColor(trajBCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Prop.")
-plot3(validBCR4BPEM.x, validBCR4BPEM.y, validBCR4BPEM.z, 'DisplayName', "BCR4BP S$B_{1}$ Trans.")
-plot3(validBCR4BPEM2.x, validBCR4BPEM2.y, validBCR4BPEM2.z, 'DisplayName', "ECLIPJ2000 Trans.")
+% plot3(validBCR4BPEM.x, validBCR4BPEM.y, validBCR4BPEM.z, 'DisplayName', "BCR4BP S$B_{1}$ Trans.")
+% plot3(validBCR4BPEM2.x, validBCR4BPEM2.y, validBCR4BPEM2.z, 'DisplayName', "ECLIPJ2000 Trans.")
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
@@ -125,8 +125,8 @@ B1 = plot3DBody("Earth", RE/lstarSB1, [1-muSB1, 0, 0]);
 set(B1, 'DisplayName', "$B_{1}$")
 fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
 scatter3(trajBCR4BPSB1.x, trajBCR4BPSB1.y, trajBCR4BPSB1.z, 10*ones(length(trajBCR4BPSB1.t), 1), angleColor(trajBCR4BPSB1.theta2), 'filled', 'DisplayName', "BCR4BP EM Trans.")
-plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
-plot3(validBCR4BPSB12.x, validBCR4BPSB12.y, validBCR4BPSB12.z, 'DisplayName', "ECLIPJ2000 Trans.")
+% plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
+% plot3(validBCR4BPSB12.x, validBCR4BPSB12.y, validBCR4BPSB12.z, 'DisplayName', "ECLIPJ2000 Trans.")
 axis equal
 grid on
 xlabel("$\underline{x}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
@@ -165,10 +165,10 @@ hold on
 Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Planar Lunar Orbit");
-plot3(MoonEclipJ2000(:,1), MoonEclipJ2000(:,2), MoonEclipJ2000(:,3), 'w:', 'DisplayName', 'True Lunar Orbit')
+% plot3(MoonEclipJ2000(:,1), MoonEclipJ2000(:,2), MoonEclipJ2000(:,3), 'w:', 'DisplayName', 'True Lunar Orbit')
 scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
-plot3(trajBCR4BPSB1EEclipJ2000.x, trajBCR4BPSB1EEclipJ2000.y, trajBCR4BPSB1EEclipJ2000.z, 'DisplayName', "BCR4BP S$B_{1}$ Traj.")
-plot3(trajCR3BPEclipJ2000.x, trajCR3BPEclipJ2000.y, trajCR3BPEclipJ2000.z, 'DisplayName', "CR3BP Traj.")
+% plot3(trajBCR4BPSB1EEclipJ2000.x, trajBCR4BPSB1EEclipJ2000.y, trajBCR4BPSB1EEclipJ2000.z, 'DisplayName', "BCR4BP S$B_{1}$ Traj.")
+% plot3(trajCR3BPEclipJ2000.x, trajCR3BPEclipJ2000.y, trajCR3BPEclipJ2000.z, 'DisplayName', "CR3BP Traj.")
 axis equal
 grid on
 xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
