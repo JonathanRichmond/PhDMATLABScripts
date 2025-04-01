@@ -1,6 +1,7 @@
 %%% Plot CR3BP Trajectory
 %%% Jonathan Richmond
 %%% C: 17 January 2025
+%%% U: 30 March 2025
 
 clear
 trajs = load('../PhDScripts/Output/CR3BPTraj.mat');
