@@ -1,12 +1,13 @@
 %%% Plot CR3BP Trajectory
 %%% Jonathan Richmond
 %%% C: 17 January 2025
-%%% U: 30 March 2025
+%%% U: 2 April 2025
 
 clear
 trajs = load('../PhDScripts/Output/CR3BPTraj.mat');
 trajNames = fieldnames(trajs);
 numSegs = length(trajNames);
+IC = [trajs.(trajNames{1}).x(1), trajs.(trajNames{1}).y(1), trajs.(trajNames{1}).z(1), trajs.(trajNames{1}).xdot(1), trajs.(trajNames{1}).ydot(1), trajs.(trajNames{1}).zdot(1)];
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -88,7 +89,7 @@ grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("$L_{1}$ P7HO?", 'Interpreter', 'latex')
+title("$L_{1}$ P7HO?: $JC="+num2str(getJC(mu, IC), '%.4f')+"$", 'Interpreter', 'latex')
 leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 view(3)
