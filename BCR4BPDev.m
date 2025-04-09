@@ -1,7 +1,7 @@
 %%% BCR4BPDev.jl
 %%% Jonathan Richmond
 %%% C: 19 February 2025
-%%% U: 26 March 2025
+%%% U: 9 April 2025
 
 clear
 addpath('C:\Program Files\MATLAB\mice\src\mice\')
@@ -90,118 +90,236 @@ b4 = sqrt(3)/2;
 b5 = -b4;
 
 %% Plots
-fig1 = figure("Position", [200 100 1200 750]);
+% fig1 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "CR3BP $L_{1}$")
+% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "CR3BP $L_{2}$")
+% scatter3(a3EM, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "CR3BP $L_{3}$")
+% scatter3(a45EM, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "CR3BP $L_{4}$")
+% scatter3(a45EM, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "CR3BP $L_{5}$")
+% plot3(orbitCR3BP.x, orbitCR3BP.y, orbitCR3BP.z, 'DisplayName', "CR3BP Orbit")
+% scatter3(trajBCR4BPEM.x, trajBCR4BPEM.y, trajBCR4BPEM.z, 10*ones(length(trajBCR4BPEM.t), 1), angleColor(trajBCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Prop.")
+% % plot3(validBCR4BPEM.x, validBCR4BPEM.y, validBCR4BPEM.z, 'DisplayName', "BCR4BP S$B_{1}$ Trans.")
+% % plot3(validBCR4BPEM2.x, validBCR4BPEM2.y, validBCR4BPEM2.z, 'DisplayName', "ECLIPJ2000 Trans.")
+% axis equal
+% grid on
+% xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+% zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon: $\theta_{S,0}="+num2str(rad2deg(trajBCR4BPEM.theta4(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+% legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+% phasemap;
+% phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
+% set(gca, 'Color', 'k')
+% view(3)
+% hold off
+% % exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
+
+% fig2 = figure("Position", [200 100 1200 750]);
+% hold on
+% B1 = plot3DBody("Earth", RE/lstarSB1, [1-muSB1, 0, 0]);
+% set(B1, 'DisplayName', "$B_{1}$")
+% fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
+% scatter3(trajBCR4BPSB1.x, trajBCR4BPSB1.y, trajBCR4BPSB1.z, 10*ones(length(trajBCR4BPSB1.t), 1), angleColor(trajBCR4BPSB1.theta2), 'filled', 'DisplayName', "BCR4BP EM Trans.")
+% % plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
+% % plot3(validBCR4BPSB12.x, validBCR4BPSB12.y, validBCR4BPSB12.z, 'DisplayName', "ECLIPJ2000 Trans.")
+% axis equal
+% grid on
+% xlabel("$\underline{x}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
+% ylabel("$\underline{y}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
+% zlabel("$\underline{z}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
+% title("Sun-$B_{1}$: $\theta_{M,0}="+num2str(rad2deg(trajBCR4BPSB1.theta2(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+% legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+% phasemap;
+% phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
+% set(gca, 'Color', 'k')
+% view(3)
+% hold off
+% % exportgraphics(fig2, 'BCR4BPDev_2.png', 'BackgroundColor', 'k')
+
+% fig3 = figure("Position", [200 100 1200 750]);
+% hold on
+% B1 = plot3DBody("Earth", RE/lstarEM*5, [0, 0, 0]);
+% set(B1, 'DisplayName', "$B_{1}$")
+% Moon = plot3DBody("Moon", Rm/lstarEM*10, MoonLoc);
+% set(Moon, 'DisplayName', "Moon")
+% Sun = plot3DBody("Sun", RS/lstarSB1*10, 2*SunLoc);
+% set(Sun, 'DisplayName', "Sun")
+% axis equal
+% grid on
+% xlabel("$X$ [meaningless]", 'Interpreter', 'latex')
+% ylabel("$Y$ [meaningless]", 'Interpreter', 'latex')
+% title("Ecliptic J2000 ($B_{1}$): "+initialEpoch, 'Interpreter', 'latex')
+% legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+% set(gca, 'Color', 'k')
+% view(2)
+% hold off
+% % exportgraphics(fig3, 'BCR4BPDev_3.png', 'BackgroundColor', 'k')
+
+% fig4 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Planar Lunar Orbit");
+% % plot3(MoonEclipJ2000(:,1), MoonEclipJ2000(:,2), MoonEclipJ2000(:,3), 'w:', 'DisplayName', 'True Lunar Orbit')
+% scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
+% % plot3(trajBCR4BPSB1EEclipJ2000.x, trajBCR4BPSB1EEclipJ2000.y, trajBCR4BPSB1EEclipJ2000.z, 'DisplayName', "BCR4BP S$B_{1}$ Traj.")
+% % plot3(trajCR3BPEclipJ2000.x, trajCR3BPEclipJ2000.y, trajCR3BPEclipJ2000.z, 'DisplayName', "CR3BP Traj.")
+% axis equal
+% grid on
+% xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
+% zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
+% title("EJ2000 (Earth): "+initialEpoch(1:11), 'Interpreter', 'latex')
+% legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+% phasemap;
+% phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
+% set(gca, 'Color', 'k')
+% view(3)
+% % view(90, 0)
+% hold off
+% % exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
+
+% fig5 = figure("Position", [200 100 1200 750]);
+% hold on
+% Sun = plot3DBody("Sun", RS/lstarEM*5, [0, 0, 0]);
+% set(Sun, 'DisplayName', "Sun (x5)")
+% fplot(@(t) (lstarSB1/lstarEM)*sin(t), @(t) (lstarSB1/lstarEM)*cos(t), 'w', 'DisplayName', "$B_{1}$ Orbit");
+% scatter3(trajBCR4BPSEclipJ2000.x, trajBCR4BPSEclipJ2000.y, trajBCR4BPSEclipJ2000.z, 10*ones(length(trajBCR4BPSEclipJ2000.t), 1), angleColor(trajBCR4BPSEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
+% axis equal
+% grid on
+% xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
+% zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
+% title("EJ2000 (Sun): "+initialEpoch(1:11), 'Interpreter', 'latex')
+% legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+% phasemap;
+% phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
+% set(gca, 'Color', 'k')
+% view(3)
+% hold off
+% % exportgraphics(fig5, 'BCR4BPDev_5.png', 'BackgroundColor', 'k')
+
+fig6 = figure("Position", [200 100 1200 750]);
 hold on
-Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
-scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
-scatter3(a3EM, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
-scatter3(a45EM, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
-scatter3(a45EM, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
-plot3(orbitCR3BP.x, orbitCR3BP.y, orbitCR3BP.z, 'DisplayName', "CR3BP Orbit")
-scatter3(trajBCR4BPEM.x, trajBCR4BPEM.y, trajBCR4BPEM.z, 10*ones(length(trajBCR4BPEM.t), 1), angleColor(trajBCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Prop.")
-% plot3(validBCR4BPEM.x, validBCR4BPEM.y, validBCR4BPEM.z, 'DisplayName', "BCR4BP S$B_{1}$ Trans.")
-% plot3(validBCR4BPEM2.x, validBCR4BPEM2.y, validBCR4BPEM2.z, 'DisplayName', "ECLIPJ2000 Trans.")
+scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "CR3BP $L_{1}$")
+scatter3(E1BCR4BPEM.x, E1BCR4BPEM.y, E1BCR4BPEM.z, 10*ones(length(E1BCR4BPEM.t), 1), angleColor(E1BCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Inst. $E_{1}$")
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon: $\theta_{S,0}="+num2str(rad2deg(trajBCR4BPEM.theta4(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+title("Earth-Moon $E_{1}$", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
-phasebar('Location', 'northeast', 'Size', 0.275)
+phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k')
-view(3)
+view(2)
 hold off
-% exportgraphics(fig1, 'BCR4BPDev_1.png', 'BackgroundColor', 'k')
+% exportgraphics(fig6, 'BCR4BPDev_6.png', 'BackgroundColor', 'k')
 
-fig2 = figure("Position", [200 100 1200 750]);
+fig7 = figure("Position", [200 100 1200 750]);
 hold on
-B1 = plot3DBody("Earth", RE/lstarSB1, [1-muSB1, 0, 0]);
-set(B1, 'DisplayName', "$B_{1}$")
-fplot(@(t) a_M*sin(t)+1-muSB1, @(t) a_M*cos(t), 'w', 'DisplayName', "Lunar Orbit");
-scatter3(trajBCR4BPSB1.x, trajBCR4BPSB1.y, trajBCR4BPSB1.z, 10*ones(length(trajBCR4BPSB1.t), 1), angleColor(trajBCR4BPSB1.theta2), 'filled', 'DisplayName', "BCR4BP EM Trans.")
-% plot3(validBCR4BPSB1.x, validBCR4BPSB1.y, validBCR4BPSB1.z, 'DisplayName', "BCR4BP S$B_{1}$ Prop.")
-% plot3(validBCR4BPSB12.x, validBCR4BPSB12.y, validBCR4BPSB12.z, 'DisplayName', "ECLIPJ2000 Trans.")
+scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "CR3BP $L_{2}$")
+scatter3(E2BCR4BPEM.x, E2BCR4BPEM.y, E2BCR4BPEM.z, 10*ones(length(E2BCR4BPEM.t), 1), angleColor(E2BCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Inst. $E_{2}$")
 axis equal
 grid on
-xlabel("$\underline{x}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
-ylabel("$\underline{y}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
-zlabel("$\underline{z}$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
-title("Sun-$B_{1}$: $\theta_{M,0}="+num2str(rad2deg(trajBCR4BPSB1.theta2(1)), '%.0f')+"^{\circ}$", 'Interpreter', 'latex')
+xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+title("Earth-Moon $E_{2}$", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 phasemap;
-phasebar('Location', 'northeast', 'Size', 0.275)
+phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k')
-view(3)
+view(2)
 hold off
-% exportgraphics(fig2, 'BCR4BPDev_2.png', 'BackgroundColor', 'k')
+% exportgraphics(fig7, 'BCR4BPDev_7.png', 'BackgroundColor', 'k')
 
-fig3 = figure("Position", [200 100 1200 750]);
+fig8 = figure("Position", [200 100 1200 750]);
 hold on
-B1 = plot3DBody("Earth", RE/lstarEM*5, [0, 0, 0]);
-set(B1, 'DisplayName', "$B_{1}$")
-Moon = plot3DBody("Moon", Rm/lstarEM*10, MoonLoc);
-set(Moon, 'DisplayName', "Moon")
-Sun = plot3DBody("Sun", RS/lstarSB1*10, 2*SunLoc);
-set(Sun, 'DisplayName', "Sun")
-axis equal
+H1 = zeros(length(E1BCR4BPEM.t), 1);
+H2 = zeros(length(E2BCR4BPEM.t), 1);
+H = zeros(length(trajBCR4BPEM.t), 1);
+for j = 1:length(E1BCR4BPEM.t)
+    H1(j) = getHEM(muEM, m_S, a_S, [E1BCR4BPEM.x(j), E1BCR4BPEM.y(j), E1BCR4BPEM.z(j), E1BCR4BPEM.xdot(j), E1BCR4BPEM.ydot(j), E1BCR4BPEM.zdot(j), E1BCR4BPEM.theta4(j)]);
+    H2(j) = getHEM(muEM, m_S, a_S, [E2BCR4BPEM.x(j), E2BCR4BPEM.y(j), E2BCR4BPEM.z(j), E2BCR4BPEM.xdot(j), E2BCR4BPEM.ydot(j), E2BCR4BPEM.zdot(j), E2BCR4BPEM.theta4(j)]);
+    H(j) = getHEM(muEM, m_S, a_S, [trajBCR4BPEM.x(j), trajBCR4BPEM.y(j), trajBCR4BPEM.z(j), trajBCR4BPEM.xdot(j), trajBCR4BPEM.ydot(j), trajBCR4BPEM.zdot(j), trajBCR4BPEM.theta4(j)]);
+end
+scatter(rad2deg(E1BCR4BPEM.theta4), H1, 10, 'r', 'filled', 'DisplayName', "Inst. $E_{1}$")
+scatter(rad2deg(E2BCR4BPEM.theta4), H2, 10, [1 0.5 0], 'filled', 'DisplayName', "Inst. $E_{2}$")
+scatter(rad2deg(trajBCR4BPEM.theta4), H, 10*ones(length(E2BCR4BPEM.t), 1), angleColor(E2BCR4BPEM.theta4), 'filled', 'DisplayName', "Traj")
 grid on
-xlabel("$X$ [meaningless]", 'Interpreter', 'latex')
-ylabel("$Y$ [meaningless]", 'Interpreter', 'latex')
-title("Ecliptic J2000 ($B_{1}$): "+initialEpoch, 'Interpreter', 'latex')
+xlabel("$\theta_{S}$ [deg]", 'Interpreter', 'latex')
+ylabel("$H$ [EM ndim]", 'Interpreter', 'latex')
+title("BCR4BP Earth-Moon", 'Interpreter', 'latex')
 legend('Location', 'northeastoutside', 'Interpreter', 'latex')
 set(gca, 'Color', 'k')
 view(2)
 hold off
-% exportgraphics(fig3, 'BCR4BPDev_3.png', 'BackgroundColor', 'k')
-
-fig4 = figure("Position", [200 100 1200 750]);
-hold on
-Earth = plot3DBody("Earth", RE/lstarEM, [0, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-fplot(@(t) sin(t), @(t) cos(t), 'w', 'DisplayName', "Planar Lunar Orbit");
-% plot3(MoonEclipJ2000(:,1), MoonEclipJ2000(:,2), MoonEclipJ2000(:,3), 'w:', 'DisplayName', 'True Lunar Orbit')
-scatter3(trajBCR4BPEEclipJ2000.x, trajBCR4BPEEclipJ2000.y, trajBCR4BPEEclipJ2000.z, 10*ones(length(trajBCR4BPEEclipJ2000.t), 1), angleColor(trajBCR4BPEEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
-% plot3(trajBCR4BPSB1EEclipJ2000.x, trajBCR4BPSB1EEclipJ2000.y, trajBCR4BPSB1EEclipJ2000.z, 'DisplayName', "BCR4BP S$B_{1}$ Traj.")
-% plot3(trajCR3BPEclipJ2000.x, trajCR3BPEclipJ2000.y, trajCR3BPEclipJ2000.z, 'DisplayName', "CR3BP Traj.")
-axis equal
-grid on
-xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
-ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
-zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
-title("EJ2000 (Earth): "+initialEpoch(1:11), 'Interpreter', 'latex')
-legend('Location', 'northeastoutside', 'Interpreter', 'latex')
-phasemap;
-phasebar('Location', 'northeast', 'Size', 0.275)
-set(gca, 'Color', 'k')
-view(3)
-% view(90, 0)
-hold off
-% exportgraphics(fig4, 'BCR4BPDev_4.png', 'BackgroundColor', 'k')
-
-fig5 = figure("Position", [200 100 1200 750]);
-hold on
-Sun = plot3DBody("Sun", RS/lstarEM*5, [0, 0, 0]);
-set(Sun, 'DisplayName', "Sun (x5)")
-fplot(@(t) (lstarSB1/lstarEM)*sin(t), @(t) (lstarSB1/lstarEM)*cos(t), 'w', 'DisplayName', "$B_{1}$ Orbit");
-scatter3(trajBCR4BPSEclipJ2000.x, trajBCR4BPSEclipJ2000.y, trajBCR4BPSEclipJ2000.z, 10*ones(length(trajBCR4BPSEclipJ2000.t), 1), angleColor(trajBCR4BPSEclipJ2000.theta4), 'filled', 'DisplayName', "BCR4BP EM Traj.")
-axis equal
-grid on
-xlabel("$X$ [EM ndim]", 'Interpreter', 'latex')
-ylabel("$Y$ [EM ndim]", 'Interpreter', 'latex')
-zlabel("$Z$ [EM ndim]", 'Interpreter', 'latex')
-title("EJ2000 (Sun): "+initialEpoch(1:11), 'Interpreter', 'latex')
-legend('Location', 'northeastoutside', 'Interpreter', 'latex')
-phasemap;
-phasebar('Location', 'northeast', 'Size', 0.275)
-set(gca, 'Color', 'k')
-view(3)
-hold off
-% exportgraphics(fig5, 'BCR4BPDev_5.png', 'BackgroundColor', 'k')
+% exportgraphics(fig8, 'BCR4BPDev_8.png', 'BackgroundColor', 'k')
 
 cspice_kclear
+
+%% Animation
+% tail = 20;
+% time = linspace(trajBCR4BPEM.t(1), trajBCR4BPEM.t(end), 1201);
+% 
+% % Video Object and Figure Params
+% writerObj = VideoWriter('BCR4BPDev.mp4', 'MPEG-4');
+% writerObj.FrameRate = 40;
+% writerObj.Quality = 100;
+% open(writerObj);
+% fig = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
+% fig.Color = 'k';
+% grid on
+% box on
+% 
+% % Plot Loop
+% for t = 1:length(time)
+%     j = find(trajBCR4BPEM.t >= time(t), 1);
+%     fig;
+% 
+%     hold on
+%     Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+%     set(Moon, 'DisplayName', "Moon")
+%     scatter3(E1BCR4BPEM.x(j), E1BCR4BPEM.y(j), E1BCR4BPEM.z(j), 20, 'r', 'filled', 'd', 'DisplayName', "BCR4BP Inst. $E_{1}$")
+%     scatter3(E2BCR4BPEM.x(j), E2BCR4BPEM.y(j), E2BCR4BPEM.z(j), 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "BCR4BP Inst. $E_{2}$")
+%     if j > 1
+%         plot3(trajBCR4BPEM.x(1:j), trajBCR4BPEM.y(1:j), trajBCR4BPEM.z(1:j), 'Color', 0.3*[1 1 1], 'LineWidth', 1, 'HandleVisibility', 'off')
+%     end
+%     if t >= tail
+%         jTail = find(trajBCR4BPEM.t >= time(t-tail+1), 1);
+%         plot3(trajBCR4BPEM.x(jTail:j), trajBCR4BPEM.y(jTail:j), trajBCR4BPEM.z(jTail:j), 'w', 'HandleVisibility', 'off')
+%     elseif j > 1
+%         plot3(trajBCR4BPEM.x(1:j), trajBCR4BPEM.y(1:j), trajBCR4BPEM.z(1:j), 'w', 'HandleVisibility', 'off')
+%     end
+%     scatter3(trajBCR4BPEM.x(j), trajBCR4BPEM.y(j), trajBCR4BPEM.z(j), 30, 'w', 'filled', 'DisplayName', "BCR4BP EM Traj")
+%     axis equal
+%     axisLimits = [0.79, 1.2, -0.15, 0.15];
+%     grid on
+%     quiver(1.15, -0.1, 0.025*cos(trajBCR4BPEM.theta4(j)), 0.025*sin(trajBCR4BPEM.theta4(j)), 'off', 'filled', 'Color', 'y', 'MaxHeadSize', 1, 'LineWidth', 3, 'DisplayName', "Sun Direction")
+%     ZVC = getZVC(muEM, m_S, a_S, trajBCR4BPEM.theta4(j), H(j), axisLimits, 250, 'w--');
+%     set(ZVC, 'DisplayName', "Inst. ZVC")
+%     axis(axisLimits)
+%     xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+%     ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+%     zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+%     title("Earth-Moon: $H="+num2str(H(j), '%.4f')+"$", 'Interpreter', 'latex')
+%     legend('Location', 'northeastoutside', 'Interpreter', 'latex')
+%     set(gca, 'Color', 'k')
+%     view(2)
+%     hold off
+% 
+%     frame = getframe(gcf);
+%     writeVideo(writerObj, frame);
+%     clf
+%     grid on
+%     box on
+% end
+% 
+% close(writerObj);
