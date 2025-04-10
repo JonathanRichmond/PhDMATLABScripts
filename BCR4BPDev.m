@@ -8,9 +8,6 @@ addpath('C:\Program Files\MATLAB\mice\src\mice\')
 addpath('C:\Program Files\MATLAB\mice\lib\')
 cspice_furnsh('naif0012.tls')
 load("../PhDScripts/Output/BCR4BPDev.mat")
-initialEpoch = cspice_et2utc(trajBCR4BPEEclipJ2000.t(1), 'C', 0);
-MoonLoc = [MoonInitialState.x, MoonInitialState.y, MoonInitialState.z]./norm([MoonInitialState.x, MoonInitialState.y, MoonInitialState.z]);
-SunLoc = [SunInitialState.x, SunInitialState.y, SunInitialState.z]./norm([SunInitialState.x, SunInitialState.y, SunInitialState.z]);
 
 %% Body Data
 % Earth
@@ -40,8 +37,6 @@ muEM = gmm/(gmE+gmm); % Mass ratio
 
 m_S = mS/mstarEM;
 a_S = 1.4959789401764473E8/lstarEM;
-
-MoonEclipJ2000 = rotToP1EclipJ2000(muEM, initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, trajCR3BPEclipJ2000.t, ones(length(trajCR3BPEclipJ2000.t), 1)*[1-muEM, 0, 0, 0, 0, 0]);
 
 %% Sun-B1 Data
 mstarSB1 = mstarEM*(m_S+1); % Characteristic mass [kg]
@@ -88,6 +83,22 @@ a3EM = -1*muEM-g3;
 a45EM = 0.5-muEM;
 b4 = sqrt(3)/2;
 b5 = -b4;
+
+%% Data Manipulation
+initialEpoch = cspice_et2utc(trajBCR4BPEEclipJ2000.t(1), 'C', 0);
+MoonEclipJ2000 = rotToP1EclipJ2000(muEM, initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, trajCR3BPEclipJ2000.t, ones(length(trajCR3BPEclipJ2000.t), 1)*[1-muEM, 0, 0, 0, 0, 0]);
+MoonLoc = [MoonInitialState.x, MoonInitialState.y, MoonInitialState.z]./norm([MoonInitialState.x, MoonInitialState.y, MoonInitialState.z]);
+SunLoc = [SunInitialState.x, SunInitialState.y, SunInitialState.z]./norm([SunInitialState.x, SunInitialState.y, SunInitialState.z]);
+H1 = zeros(length(E1BCR4BPEM.t), 1);
+H2 = zeros(length(E2BCR4BPEM.t), 1);
+H = zeros(length(trajBCR4BPEM.t), 1);
+HL1 = zeros(length(L1Orbit.t), 1);
+for j = 1:length(E1BCR4BPEM.t)
+    H1(j) = getHEM(muEM, m_S, a_S, [E1BCR4BPEM.x(j), E1BCR4BPEM.y(j), E1BCR4BPEM.z(j), E1BCR4BPEM.xdot(j), E1BCR4BPEM.ydot(j), E1BCR4BPEM.zdot(j), E1BCR4BPEM.theta4(j)]);
+    H2(j) = getHEM(muEM, m_S, a_S, [E2BCR4BPEM.x(j), E2BCR4BPEM.y(j), E2BCR4BPEM.z(j), E2BCR4BPEM.xdot(j), E2BCR4BPEM.ydot(j), E2BCR4BPEM.zdot(j), E2BCR4BPEM.theta4(j)]);
+    H(j) = getHEM(muEM, m_S, a_S, [trajBCR4BPEM.x(j), trajBCR4BPEM.y(j), trajBCR4BPEM.z(j), trajBCR4BPEM.xdot(j), trajBCR4BPEM.ydot(j), trajBCR4BPEM.zdot(j), trajBCR4BPEM.theta4(j)]);
+    HL1(j) = getHEM(muEM, m_S, a_S, [L1Orbit.x(j), L1Orbit.y(j), L1Orbit.z(j), L1Orbit.xdot(j), L1Orbit.ydot(j), L1Orbit.zdot(j), L1Orbit.theta4(j)]);
+end
 
 %% Plots
 % fig1 = figure("Position", [200 100 1200 750]);
@@ -208,6 +219,7 @@ fig6 = figure("Position", [200 100 1200 750]);
 hold on
 scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "CR3BP $L_{1}$")
 scatter3(E1BCR4BPEM.x, E1BCR4BPEM.y, E1BCR4BPEM.z, 10*ones(length(E1BCR4BPEM.t), 1), angleColor(E1BCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Inst. $E_{1}$")
+% scatter3(L1Orbit.x, L1Orbit.y, L1Orbit.z, 10*ones(length(L1Orbit.t), 1), angleColor(L1Orbit.theta4), 'filled', 'DisplayName', "BCR4BP $L_{1}$ Orbit")
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
@@ -242,14 +254,6 @@ hold off
 
 fig8 = figure("Position", [200 100 1200 750]);
 hold on
-H1 = zeros(length(E1BCR4BPEM.t), 1);
-H2 = zeros(length(E2BCR4BPEM.t), 1);
-H = zeros(length(trajBCR4BPEM.t), 1);
-for j = 1:length(E1BCR4BPEM.t)
-    H1(j) = getHEM(muEM, m_S, a_S, [E1BCR4BPEM.x(j), E1BCR4BPEM.y(j), E1BCR4BPEM.z(j), E1BCR4BPEM.xdot(j), E1BCR4BPEM.ydot(j), E1BCR4BPEM.zdot(j), E1BCR4BPEM.theta4(j)]);
-    H2(j) = getHEM(muEM, m_S, a_S, [E2BCR4BPEM.x(j), E2BCR4BPEM.y(j), E2BCR4BPEM.z(j), E2BCR4BPEM.xdot(j), E2BCR4BPEM.ydot(j), E2BCR4BPEM.zdot(j), E2BCR4BPEM.theta4(j)]);
-    H(j) = getHEM(muEM, m_S, a_S, [trajBCR4BPEM.x(j), trajBCR4BPEM.y(j), trajBCR4BPEM.z(j), trajBCR4BPEM.xdot(j), trajBCR4BPEM.ydot(j), trajBCR4BPEM.zdot(j), trajBCR4BPEM.theta4(j)]);
-end
 scatter(rad2deg(E1BCR4BPEM.theta4), H1, 10, 'r', 'filled', 'DisplayName', "Inst. $E_{1}$")
 scatter(rad2deg(E2BCR4BPEM.theta4), H2, 10, [1 0.5 0], 'filled', 'DisplayName', "Inst. $E_{2}$")
 scatter(rad2deg(trajBCR4BPEM.theta4), H, 10*ones(length(E2BCR4BPEM.t), 1), angleColor(E2BCR4BPEM.theta4), 'filled', 'DisplayName', "Traj")
@@ -262,6 +266,18 @@ set(gca, 'Color', 'k')
 view(2)
 hold off
 % exportgraphics(fig8, 'BCR4BPDev_8.png', 'BackgroundColor', 'k')
+
+fig9 = figure("Position", [200 100 1200 750]);
+hold on
+plot(rad2deg(E1BCR4BPEM.theta4), HL1-H1, 'r', 'HandleVisibility', 'off')
+grid on
+xlabel("$\theta_{S}$ [deg]", 'Interpreter', 'latex')
+ylabel("$H_{L1}-H_{E1}$ [EM ndim]", 'Interpreter', 'latex')
+title("BCR4BP Earth-Moon", 'Interpreter', 'latex')
+set(gca, 'Color', 'k')
+view(2)
+hold off
+% exportgraphics(fig9, 'BCR4BPDev_9.png', 'BackgroundColor', 'k')
 
 cspice_kclear
 
@@ -300,7 +316,7 @@ cspice_kclear
 %     end
 %     scatter3(trajBCR4BPEM.x(j), trajBCR4BPEM.y(j), trajBCR4BPEM.z(j), 30, 'w', 'filled', 'DisplayName', "BCR4BP EM Traj")
 %     axis equal
-%     axisLimits = [0.79, 1.2, -0.15, 0.15];
+%     axisLimits = [0.79 1.2 -0.15 0.15];
 %     grid on
 %     quiver(1.15, -0.1, 0.025*cos(trajBCR4BPEM.theta4(j)), 0.025*sin(trajBCR4BPEM.theta4(j)), 'off', 'filled', 'Color', 'y', 'MaxHeadSize', 1, 'LineWidth', 3, 'DisplayName', "Sun Direction")
 %     ZVC = getZVC(muEM, m_S, a_S, trajBCR4BPEM.theta4(j), H(j), axisLimits, 250, 'w--');
