@@ -29,10 +29,11 @@ set(Moon, 'DisplayName', "Moon")
 scatter3(BCR4BPOrbit.x, BCR4BPOrbit.y, BCR4BPOrbit.z, 10*ones(length(BCR4BPOrbit.t), 1), angleColor(BCR4BPOrbit.theta4), 'filled', 'DisplayName', "BCR4BP 1:1 Syn.")
 plot3(CR3BPGuessOrbit.x, CR3BPGuessOrbit.y, CR3BPGuessOrbit.z, 'g', 'DisplayName', "CR3BP 1:1 Sid.")
 plot3(CR3BPCompOrbit.x, CR3BPCompOrbit.y, CR3BPCompOrbit.z, 'r', 'DisplayName', "CR3BP 1:1 Syn.")
-scatter3(BCR4BPOrbit2.x, BCR4BPOrbit2.y, BCR4BPOrbit2.z, 10*ones(length(BCR4BPOrbit2.t), 1), angleColor(BCR4BPOrbit2.theta4), 'filled', 'DisplayName', "BCR4BP 2:1 Syn.")
-plot3(CR3BPGuessOrbit2.x, CR3BPGuessOrbit2.y, CR3BPGuessOrbit2.z, 'g', 'DisplayName', "CR3BP 2:1 Sid.")
-plot3(CR3BPCompOrbit2.x, CR3BPCompOrbit2.y, CR3BPCompOrbit2.z, 'r', 'DisplayName', "CR3BP 2:1 Syn.")
+% scatter3(BCR4BPOrbit2.x, BCR4BPOrbit2.y, BCR4BPOrbit2.z, 10*ones(length(BCR4BPOrbit2.t), 1), angleColor(BCR4BPOrbit2.theta4), 'filled', 'DisplayName', "BCR4BP 2:1 Syn.")
+% plot3(CR3BPGuessOrbit2.x, CR3BPGuessOrbit2.y, CR3BPGuessOrbit2.z, 'g', 'DisplayName', "CR3BP 2:1 Sid.")
+% plot3(CR3BPCompOrbit2.x, CR3BPCompOrbit2.y, CR3BPCompOrbit2.z, 'r', 'DisplayName', "CR3BP 2:1 Syn.")
 axis equal
+axis([-0.16 1.88 -0.67 0.67])
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
@@ -44,4 +45,4 @@ phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
 set(gca, 'Color', 'k');
 view(2)
 hold off
-% exportgraphics(fig1, 'PlotCR3BPTraj_1.png', 'BackgroundColor', 'k')
+% exportgraphics(fig1, 'EMPlanarOrbit_1.png', 'BackgroundColor', 'k')

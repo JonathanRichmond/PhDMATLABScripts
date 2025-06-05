@@ -67,15 +67,15 @@ b5 = -b4;
 %% Plot
 fig1 = figure("Position", [200 100 1200 750]);
 hold on
-% Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
-% set(Earth, 'DisplayName', "Earth")
+Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
+set(Earth, 'DisplayName', "Earth")
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
 scatter3(a1, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
 scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
-% scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
-% scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
-% scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
+scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
+scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
+scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
 for j = 1:numSegs/2
     plot3(trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 'b', 'HandleVisibility', 'off')
     scatter3(trajs.(trajNames{j}).x(1), trajs.(trajNames{j}).y(1), trajs.(trajNames{j}).z(1), 50, 'w', 'filled', 'HandleVisibility', 'off')
@@ -89,10 +89,10 @@ grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("$L_{1}$ P7HO?: $JC="+num2str(getJC(mu, IC), '%.4f')+"$", 'Interpreter', 'latex')
+title("Earth-Moon 3:2 Resonant (3:5 Syn.)", 'Interpreter', 'latex')
 leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
-view(3)
+view(2)
 ax = gca;
 for j = 1:numSegs
     plot2DProjections(ax, [2 2 1], trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 0.15);
