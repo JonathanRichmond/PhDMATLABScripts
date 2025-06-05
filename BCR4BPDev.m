@@ -219,7 +219,7 @@ fig6 = figure("Position", [200 100 1200 750]);
 hold on
 scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "CR3BP $L_{1}$")
 scatter3(E1BCR4BPEM.x, E1BCR4BPEM.y, E1BCR4BPEM.z, 10*ones(length(E1BCR4BPEM.t), 1), angleColor(E1BCR4BPEM.theta4), 'filled', 'DisplayName', "BCR4BP EM Inst. $E_{1}$")
-% scatter3(L1Orbit.x, L1Orbit.y, L1Orbit.z, 10*ones(length(L1Orbit.t), 1), angleColor(L1Orbit.theta4), 'filled', 'DisplayName', "BCR4BP $L_{1}$ Orbit")
+scatter3(L1Orbit.x, L1Orbit.y, L1Orbit.z, 10*ones(length(L1Orbit.t), 1), angleColor(L1Orbit.theta4), 'filled', 'DisplayName', "BCR4BP $L_{1}$ Orbit")
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
