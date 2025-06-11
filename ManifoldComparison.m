@@ -53,7 +53,7 @@ grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon $L_{2}$ 1:1 Lyapunov Manifolds", 'Interpreter', 'latex')
+title("Earth-Moon $L_{2}$ 3:2 Lyapunov Manifolds", 'Interpreter', 'latex')
 leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 phasemap
 phasebar('deg', 'Location', 'northeast', 'Size', 0.275);
