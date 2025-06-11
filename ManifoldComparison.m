@@ -48,12 +48,12 @@ for j = 1:pseudoManifold.n
 end
 axis equal
 % axis
-axis([-1.72 2.87 -2.34 0.68])
+axis([-2.44 3.43 -2.78 1.09])
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon $L_{1}$ 3:2 Lyapunov Manifolds", 'Interpreter', 'latex')
+title("Earth-Moon $L_{2}$ 1:1 Lyapunov Manifolds", 'Interpreter', 'latex')
 leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 phasemap
 phasebar('deg', 'Location', 'northeast', 'Size', 0.275);
