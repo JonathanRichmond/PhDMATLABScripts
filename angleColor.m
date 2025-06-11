@@ -8,7 +8,7 @@ valuesWrapped = phasewrap(values);
 colorMap = phasemap(1001);
 valueMap = linspace(-pi, pi, 1001);
 colors = zeros(length(values), 3);
-for i = 1:length(values)
-    [~, colorIndex] = min(abs(valueMap-valuesWrapped(i)));
-    colors(i,:) = colorMap(colorIndex,:);
+for j = 1:length(values)
+    [~, colorIndex] = min(abs(valueMap-valuesWrapped(j)));
+    colors(j,:) = colorMap(colorIndex,:);
 end
