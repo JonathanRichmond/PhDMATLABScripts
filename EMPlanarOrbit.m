@@ -27,19 +27,19 @@ hold on
 % set(Earth, 'DisplayName', "Earth")
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-plot3(BCR4BPOrbit1.x, BCR4BPOrbit1.y, BCR4BPOrbit1.z, 'b', 'DisplayName', "BCR4BP 1:1 Syn.")
+plot3(BCR4BPOrbit1.x, BCR4BPOrbit1.y, BCR4BPOrbit1.z, 'b', 'DisplayName', "BCR4BP 1:1(a) Syn.")
 plot3(CR3BPGuessOrbit1.x, CR3BPGuessOrbit1.y, CR3BPGuessOrbit1.z, 'g', 'DisplayName', "CR3BP 1:1 Sid.")
 plot3(CR3BPCompOrbit1.x, CR3BPCompOrbit1.y, CR3BPCompOrbit1.z, 'r', 'DisplayName', "CR3BP 1:1 Syn.")
-plot3(BCR4BPOrbit2.x, BCR4BPOrbit2.y, BCR4BPOrbit2.z, 'b', 'DisplayName', "BCR4BP 3:2 Syn.")
-plot3(CR3BPGuessOrbit2.x, CR3BPGuessOrbit2.y, CR3BPGuessOrbit2.z, 'g', 'DisplayName', "CR3BP 3:2 Sid.")
-plot3(CR3BPCompOrbit2.x, CR3BPCompOrbit2.y, CR3BPCompOrbit2.z, 'r', 'DisplayName', "CR3BP 3:2 Syn.")
+plot3(BCR4BPOrbit2.x, BCR4BPOrbit2.y, BCR4BPOrbit2.z, 'c', 'DisplayName', "BCR4BP 1:1(b) Syn.")
+plot3(CR3BPGuessOrbit2.x, CR3BPGuessOrbit2.y, CR3BPGuessOrbit2.z, 'g', 'DisplayName', "CR3BP 1:1 Sid.")
+plot3(CR3BPCompOrbit2.x, CR3BPCompOrbit2.y, CR3BPCompOrbit2.z, 'r', 'DisplayName', "CR3BP 1:1 Syn.")
 axis equal
 % axis([-0.16 1.88 -0.67 0.67])
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon $L_{2}$ Lyapunovs", 'Interpreter', 'latex')
+title("Earth-Moon $L_{1}$ Lyapunovs", 'Interpreter', 'latex')
 legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % phasemap;
 % phasebar('deg', 'Location', 'northeast', 'Size', 0.275)

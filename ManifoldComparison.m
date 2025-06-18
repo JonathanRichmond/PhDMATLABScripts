@@ -1,6 +1,7 @@
 %%% ManifoldComparison.jl
 %%% Jonathan Richmond
 %%% C: 10 June 2025
+%%% U: 17 June 2025
 
 clear
 load('../PhDScripts/Output/ManifoldComparison.mat')
@@ -29,34 +30,37 @@ set(Moon, 'DisplayName', "Moon")
 plot3(BCR4BPManifold.orbit.x, BCR4BPManifold.orbit.y, BCR4BPManifold.orbit.z, 'b', 'DisplayName', "BCR4BP Orbit")
 plot3(CR3BPManifold.orbit.x, CR3BPManifold.orbit.y, CR3BPManifold.orbit.z, 'r', 'DisplayName', "CR3BP Orbit")
 for j = 1:BCR4BPManifold.n
-    arc = plotColorLine(BCR4BPManifold.arcs{j}.x, BCR4BPManifold.arcs{j}.y, BCR4BPManifold.arcs{j}.theta4, 0.005);
+    arc = plotColorLine(BCR4BPManifold.arcs{j}.x, BCR4BPManifold.arcs{j}.y, BCR4BPManifold.arcs{j}.z, BCR4BPManifold.arcs{j}.theta4, 0.005);
     if j == 1
         set(arc, 'HandleVisibility', 'on', 'DisplayName', "BCR4BP Manifold")
     end
 end
-for j = 1:CR3BPManifold.n
-    arc = plot3(CR3BPManifold.arcs{j}.x, CR3BPManifold.arcs{j}.y, CR3BPManifold.arcs{j}.z, 'r', 'LineWidth', 1, 'HandleVisibility', 'off', 'DisplayName', "CR3BP Manifold");
-    if j == 1
-        set(arc, 'HandleVisibility', 'on')
-    end
-end
-for j = 1:pseudoManifold.n
-    arc = plot3(pseudoManifold.arcs{j}.x, pseudoManifold.arcs{j}.y, pseudoManifold.arcs{j}.z, 'g', 'LineWidth', 1, 'HandleVisibility', 'off', 'DisplayName', "P-M ($\theta_{S_{0}}="+num2str(pseudoManifold.theta40*180/pi, '%.0f')+"^{\circ}$)");
-    if j == 1
-        set(arc, 'HandleVisibility', 'on')
-    end
-end
+% for j = 1:CR3BPManifold.n
+%     arc = plot3(CR3BPManifold.arcs{j}.x, CR3BPManifold.arcs{j}.y, CR3BPManifold.arcs{j}.z, 'r', 'LineWidth', 1, 'HandleVisibility', 'off', 'DisplayName', "CR3BP Manifold");
+%     if j == 1
+%         set(arc, 'HandleVisibility', 'on')
+%     end
+% end
+% for j = 1:pseudoManifold.n
+%     arc = plot3(pseudoManifold.arcs{j}.x, pseudoManifold.arcs{j}.y, pseudoManifold.arcs{j}.z, 'g', 'LineWidth', 1, 'HandleVisibility', 'off', 'DisplayName', "Pseudo-Manifolds"); % "P-M ($\theta_{S_{0}}="+num2str(pseudoManifold.theta40*180/pi, '%.0f')+"^{\circ}$)"
+%     if j == 1
+%         set(arc, 'HandleVisibility', 'on')
+%     end
+% end
 axis equal
 % axis
-axis([-2.44 3.43 -2.78 1.09])
+% axisLimits = [-2.18 2.9 -2.34 1];
 grid on
+% ZVC = getCR3BPZVC(mu, CR3BPManifold.orbit.JC, axisLimits, 250, 'w--');
+% set(ZVC, 'DisplayName', "Inst. ZVC")
+% axis(axisLimits)
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon $L_{2}$ 3:2 Lyapunov Manifolds", 'Interpreter', 'latex')
+% title("Earth-Moon $L_{1}$ 1:1 Lyapunov Manifolds", 'Interpreter', 'latex')
 leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 phasemap
-phasebar('deg', 'Location', 'northeast', 'Size', 0.275);
+% phasebar('deg', 'Location', 'northwest', 'Size', 0.275);
 set(gca, 'Color', 'k');
 view(2)
 hold off
