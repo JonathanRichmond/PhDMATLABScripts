@@ -1,6 +1,7 @@
 %%% Plot BCR4BP Trajectory
 %%% Jonathan Richmond
 %%% C: 11 June 2025
+%%% U: 23 June 2025
 
 clear
 load('../PhDScripts/Output/EMSpatialOrbit.mat')
@@ -39,12 +40,8 @@ hold on
 % set(Earth, 'DisplayName', "Earth")
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-plot3(BCR4BPOrbit1.x, BCR4BPOrbit1.y, BCR4BPOrbit1.z, 'b', 'DisplayName', "BCR4BP 3:1(a) Syn.")
-% plot3(CR3BPGuessOrbit1.x, CR3BPGuessOrbit1.y, CR3BPGuessOrbit1.z, 'g', 'DisplayName', "CR3BP 3:1 Sid.")
-% plot3(CR3BPCompOrbit1.x, CR3BPCompOrbit1.y, CR3BPCompOrbit1.z, 'r', 'DisplayName', "CR3BP 3:1 Syn.")
-plot3(BCR4BPOrbit2.x, BCR4BPOrbit2.y, BCR4BPOrbit2.z, 'c', 'DisplayName', "BCR4BP 3:1(b) Syn.")
-plot3(CR3BPGuessOrbit2.x, CR3BPGuessOrbit2.y, CR3BPGuessOrbit2.z, 'g', 'DisplayName', "CR3BP 3:1 Sid.")
-plot3(CR3BPCompOrbit2.x, CR3BPCompOrbit2.y, CR3BPCompOrbit2.z, 'r', 'DisplayName', "CR3BP 3:1 Syn.")
+plot3(BCR4BPOrbit.x, BCR4BPOrbit.y, BCR4BPOrbit.z, 'b', 'DisplayName', "BCR4BP 3:1 Syn.")
+plot3(CR3BPCompOrbit.x, CR3BPCompOrbit.y, CR3BPCompOrbit.z, 'r', 'DisplayName', "CR3BP 3:1 Syn.")
 axis equal
 % axis
 % axis([-0.16 1.88 -0.67 0.67])
@@ -52,7 +49,7 @@ grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon $L_{2}$ Halos", 'Interpreter', 'latex')
+title("Earth-Moon Rot.", 'Interpreter', 'latex')
 legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % phasemap;
 % phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
@@ -69,8 +66,7 @@ Moontheta = 0:(pi/180):2*pi;
 Moonx = lstar.*cos(Moontheta);
 Moony = lstar.*sin(Moontheta);
 plot3(1-muSB1+Moonx./lstarSB1, Moony./lstarSB1, zeros(1, length(Moontheta)), 'w:', 'DisplayName', "Moon Orbit")
-plot3(BCR4BPSB1Orbit1.x, BCR4BPSB1Orbit1.y, BCR4BPSB1Orbit1.z, 'b', 'DisplayName', "BCR4BP 3:1(a) Syn.")
-plot3(BCR4BPSB1Orbit2.x, BCR4BPSB1Orbit2.y, BCR4BPSB1Orbit2.z, 'c', 'DisplayName', "BCR4BP 3:1(b) Syn.")
+plot3(BCR4BPSB1Orbit.x, BCR4BPSB1Orbit.y, BCR4BPSB1Orbit.z, 'b', 'DisplayName', "BCR4BP 3:1 Syn.")
 axis equal
 % axis
 % axis([-0.16 1.88 -0.67 0.67])
@@ -78,7 +74,7 @@ grid on
 xlabel("$x$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [S$B_{1}$ ndim]", 'Interpreter', 'latex')
-title("Earth-Moon $L_{2}$ Halos", 'Interpreter', 'latex')
+title("Sun-$B_{1}$ Rot.", 'Interpreter', 'latex')
 legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % phasemap;
 % phasebar('deg', 'Location', 'northeast', 'Size', 0.275)
