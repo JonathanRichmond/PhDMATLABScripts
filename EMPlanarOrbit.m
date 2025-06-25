@@ -27,8 +27,8 @@ hold on
 % set(Earth, 'DisplayName', "Earth")
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-plot3(BCR4BPOrbit.x, BCR4BPOrbit.y, BCR4BPOrbit.z, 'b', 'DisplayName', "BCR4BP 2:1 Syn.")
-plot3(CR3BPCompOrbit.x, CR3BPCompOrbit.y, CR3BPCompOrbit.z, 'r', 'DisplayName', "CR3BP 2:1 Syn.")
+plot3(BCR4BPOrbit.x, BCR4BPOrbit.y, BCR4BPOrbit.z, 'b', 'DisplayName', "BCR4BP 3:2 Syn.")
+plot3(CR3BPCompOrbit.x, CR3BPCompOrbit.y, CR3BPCompOrbit.z, 'r', 'DisplayName', "CR3BP 3:2 Syn.")
 axis equal
 % axis
 % axis([-0.16 1.88 -0.67 0.67])

@@ -27,8 +27,8 @@ Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-plot3(BCR4BPManifold.orbit.x, BCR4BPManifold.orbit.y, BCR4BPManifold.orbit.z, 'b', 'DisplayName', "BCR4BP Orbit")
-plot3(CR3BPManifold.orbit.x, CR3BPManifold.orbit.y, CR3BPManifold.orbit.z, 'r', 'DisplayName', "CR3BP Orbit")
+% plot3(BCR4BPManifold.orbit.x, BCR4BPManifold.orbit.y, BCR4BPManifold.orbit.z, 'b', 'DisplayName', "BCR4BP Orbit")
+% plot3(CR3BPManifold.orbit.x, CR3BPManifold.orbit.y, CR3BPManifold.orbit.z, 'r', 'DisplayName', "CR3BP Orbit")
 for j = 1:BCR4BPManifold.n
     arc = plotColorLine(BCR4BPManifold.arcs{j}.x, BCR4BPManifold.arcs{j}.y, BCR4BPManifold.arcs{j}.z, BCR4BPManifold.arcs{j}.theta4, 0.005);
     if j == 1
@@ -42,17 +42,19 @@ for j = 1:CR3BPManifold.n
     end
 end
 for j = 1:pseudoManifold.n
-    arc = patch([pseudoManifold.arcs{j}.x; NaN], [pseudoManifold.arcs{j}.y; NaN], [pseudoManifold.arcs{j}.z; NaN], 'EdgeColor', 'g', 'EdgeAlpha', 0.5, 'LineWidth', 1, 'FaceColor', 'none', 'HandleVisibility', 'off', 'DisplayName', "Pseudo-Manifolds"); % "P-M ($\theta_{S_{0}}="+num2str(pseudoManifold.theta40*180/pi, '%.0f')+"^{\circ}$)"
+    V = [pseudoManifold.arcs{j}.x pseudoManifold.arcs{j}.y pseudoManifold.arcs{j}.z];
+    F = [(1:size(V, 1)-1)' (2:size(V, 1))'];
+    arc = patch('Vertices', V, 'Faces', F, 'EdgeColor', 'g', 'EdgeAlpha', 0.5, 'LineWidth', 1, 'FaceColor', 'none', 'HandleVisibility', 'off', 'DisplayName', "Pseudo-Manifolds"); % "P-M ($\theta_{S_{0}}="+num2str(pseudoManifold.theta40*180/pi, '%.0f')+"^{\circ}$)"
     if j == 1
         set(arc, 'HandleVisibility', 'on')
     end
 end
 axis equal
 % axis
-axisLimits = [-1.55 2.53 -2.16 0.53];
+% axisLimits = [-1.55 2.53 -2.16 0.53];
 grid on
-ZVC = getCR3BPZVC(mu, CR3BPManifold.orbit.JC, axisLimits, 250, 'w--');
-set(ZVC, 'DisplayName', "Inst. ZVC")
+% ZVC = getCR3BPZVC(mu, CR3BPManifold.orbit.JC, axisLimits, 250, 'w--');
+% set(ZVC, 'DisplayName', "CR3BP ZVC")
 % axis(axisLimits)
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
@@ -62,6 +64,6 @@ leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 phasemap
 % phasebar('deg', 'Location', 'northwest', 'Size', 0.275);
 set(gca, 'Color', 'k');
-view(2)
+view(3)
 hold off
 % exportgraphics(fig1, 'ManifoldComparison_1.png', 'BackgroundColor', 'k')
