@@ -64,6 +64,6 @@ leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 phasemap
 % phasebar('deg', 'Location', 'northwest', 'Size', 0.275);
 set(gca, 'Color', 'k');
-view(3)
+view(2)
 hold off
 % exportgraphics(fig1, 'ManifoldComparison_1.png', 'BackgroundColor', 'k')
