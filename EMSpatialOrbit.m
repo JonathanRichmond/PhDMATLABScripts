@@ -56,7 +56,7 @@ legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 view(3)
 hold off
-exportgraphics(fig1, 'EMSpatialOrbit_1.png', 'BackgroundColor', 'k')
+% exportgraphics(fig1, 'EMSpatialOrbit_1.png', 'BackgroundColor', 'k')
 
 fig2 = figure("Position", [200 100 1200 750]);
 hold on
