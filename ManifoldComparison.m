@@ -23,14 +23,14 @@ tstar = sqrt(lstar^3/(gmE+gmm)); % Characteristic time [s]
 RH = 1.496557260502363E6; % Hills radius [km]
 
 %% Trajectory Plot
-fig1 = figure("Position", [200 100 1200 750]);
-hold on
-Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-plot3(BCR4BPManifold.orbit.x, BCR4BPManifold.orbit.y, BCR4BPManifold.orbit.z, 'b', 'DisplayName', "BCR4BP Orbit")
-plot3(CR3BPManifold.orbit.x, CR3BPManifold.orbit.y, CR3BPManifold.orbit.z, 'r', 'DisplayName', "CR3BP Orbit")
+% fig1 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% plot3(BCR4BPManifold.orbit.x, BCR4BPManifold.orbit.y, BCR4BPManifold.orbit.z, 'b', 'DisplayName', "BCR4BP Orbit")
+% plot3(CR3BPManifold.orbit.x, CR3BPManifold.orbit.y, CR3BPManifold.orbit.z, 'r', 'DisplayName', "CR3BP Orbit")
 % for j = 1:BCR4BPManifold.n
 %     arc = plotColorLine(BCR4BPManifold.arcs{j}.x, BCR4BPManifold.arcs{j}.y, BCR4BPManifold.arcs{j}.z, BCR4BPManifold.arcs{j}.theta4, 0.005);
 %     if j == 1
@@ -52,36 +52,78 @@ plot3(CR3BPManifold.orbit.x, CR3BPManifold.orbit.y, CR3BPManifold.orbit.z, 'r', 
 %     end
 % end
 % plot3(RH/lstar*cos(linspace(0, 2*pi, 101))-mu, RH/lstar*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Hills Radius")
-axis equal
-axis
+% axis equal
+% axis
 % axisLimits = [-0.22 1.52 -0.57 0.57];
-grid on
+% grid on
 % ZVC = getCR3BPZVC(mu, CR3BPManifold.orbit.JC, axisLimits, 250, 'w--');
 % set(ZVC, 'DisplayName', "CR3BP ZVC")
 % axis(axisLimits)
+% xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+% zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.", 'Interpreter', 'latex')
+% leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% phasemap
+% phasebar('deg', 'Location', 'northwest', 'Size', 0.275);
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% exportgraphics(fig1, 'ManifoldComparison_1.png', 'BackgroundColor', 'k')
+
+%% Hills Escape Velocity
+% fig2 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(HillsTOFBCR4BP, vEscBCR4BP, 20, [1 0 1], 'filled', 'DisplayName', "BCR4BP Manifold")
+% % for j = 1:BCR4BPManifold.n
+% %     if (HillsTOFBCR4BP(j) < 10*pi) && (vEscBCR4BP(j) < 1.2)
+% %         text(HillsTOFBCR4BP(j), vEscBCR4BP(j), num2str(j), 'FontSize', 10)
+% %     end
+% % end
+% scatter(HillsTOFCR3BP, vEscCR3BP, 20, 'r', 'filled', 'DisplayName', "CR3BP Manifold")
+% % for j = 1:CR3BPManifold.n
+% %     if (HillsTOFCR3BP(j) < 10*pi) && (vEscCR3BP(j) < 1.2)
+% %         text(HillsTOFCR3BP(j), vEscCR3BP(j), num2str(j), 'FontSize', 10)
+% %     end
+% % end
+% scatter(HillsTOFPseudo, vEscPseudo, 20, 'g', 'filled', 'DisplayName', "Pseudo-Manifolds")
+% for j = 1:pseudoManifold.n
+%     if (HillsTOFPseudo(j) < 10*pi) && (vEscPseudo(j) < 1.2)
+%         text(HillsTOFPseudo(j), vEscPseudo(j), num2str(j), 'FontSize', 10)
+%     end
+% end
+% axis([0 9.99*pi 0 1.2])
+% grid on
+% xlabel("$TOF$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("ECI $v_{esc}$ [EM ndim]", 'Interpreter', 'latex')
+% title("Hills Escape Velocity", 'Interpreter', 'latex')
+% legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% hold off
+% exportgraphics(fig2, 'ManifoldComparison_2.png', 'BackgroundColor', 'k')
+
+fig3 = figure("Position", [200 100 1200 750]);
+hold on
+Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
+set(Earth, 'DisplayName', "Earth")
+Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
+set(Moon, 'DisplayName', "Moon")
+j = 571;
+% plotColorLine(BCR4BPManifold.arcs{j}.x(1:end-20), BCR4BPManifold.arcs{j}.y(1:end-20), BCR4BPManifold.arcs{j}.z(1:end-20), BCR4BPManifold.arcs{j}.theta4(1:end-20), 0.005);
+% scatter3(BCR4BPManifold.arcs{j}.x(1), BCR4BPManifold.arcs{j}.y(1), BCR4BPManifold.arcs{j}.z(1), 100, 'w', '*', 'HandleVisibility', 'off')
+% plot3(CR3BPManifold.arcs{j}.x(1:end-20), CR3BPManifold.arcs{j}.y(1:end-20), CR3BPManifold.arcs{j}.z(1:end-20), 'r', 'HandleVisibility', 'off')
+% scatter3(CR3BPManifold.arcs{j}.x(1), CR3BPManifold.arcs{j}.y(1), CR3BPManifold.arcs{j}.z(1), 100, 'w', '*', 'HandleVisibility', 'off')
+plotColorLine(pseudoManifold.arcs{j}.x(1:end-20), pseudoManifold.arcs{j}.y(1:end-20), pseudoManifold.arcs{j}.z(1:end-20), pseudoManifold.arcs{j}.theta4(1:end-20), 0.005);
+scatter3(pseudoManifold.arcs{j}.x(1), pseudoManifold.arcs{j}.y(1), pseudoManifold.arcs{j}.z(1), 100, 'w', '*', 'HandleVisibility', 'off')
+axis equal
+grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
 title("Earth-Moon Rot.", 'Interpreter', 'latex')
 leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 phasemap
-% phasebar('deg', 'Location', 'northwest', 'Size', 0.275);
+phasebar('deg', 'Location', 'northwest', 'Size', 0.275);
 set(gca, 'Color', 'k');
 view(2)
 hold off
-% exportgraphics(fig1, 'ManifoldComparison_1.png', 'BackgroundColor', 'k')
-
-%% Metric Plot
-fig2 = figure("Position", [200 100 1200 750]);
-hold on
-scatter(HillsTOFBCR4BP, vEscBCR4BP, 20, [1 0 1], 'filled', 'DisplayName', "BCR4BP Manifold")
-scatter(HillsTOFCR3BP, vEscCR3BP, 20, 'r', 'filled', 'DisplayName', "CR3BP Manifold")
-scatter(HillsTOFPseudo, vEscPseudo, 20, 'g', 'filled', 'DisplayName', "Pseudo-Manifolds")
-axis([0 9.99*pi 0 1.2])
-grid on
-xlabel("$TOF$ [EM ndim]", 'Interpreter', 'latex')
-ylabel("ECI $v_{esc}$ [EM ndim]", 'Interpreter', 'latex')
-title("Hills Escape Velocity", 'Interpreter', 'latex')
-legend('Location', 'bestoutside', 'Interpreter', 'latex');
-hold off
-% exportgraphics(fig2, 'ManifoldComparison_2.png', 'BackgroundColor', 'k')
+% exportgraphics(fig3, 'ManifoldComparison_3.png', 'BackgroundColor', 'k')
