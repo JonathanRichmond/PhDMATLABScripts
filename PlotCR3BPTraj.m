@@ -1,13 +1,10 @@
 %%% Plot CR3BP Trajectory
 %%% Jonathan Richmond
 %%% C: 17 January 2025
-%%% U: 2 April 2025
+%%% U: 22 July 2025
 
 clear
-trajs = load('../PhDScripts/Output/CR3BPTraj.mat');
-trajNames = fieldnames(trajs);
-numSegs = length(trajNames);
-IC = [trajs.(trajNames{1}).x(1), trajs.(trajNames{1}).y(1), trajs.(trajNames{1}).z(1), trajs.(trajNames{1}).xdot(1), trajs.(trajNames{1}).ydot(1), trajs.(trajNames{1}).zdot(1)];
+load('../PhDScripts/Output/CR3BPTraj.mat');
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -76,26 +73,20 @@ scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
 % scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
 % scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
 % scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
-for j = 1:numSegs/2
-    plot3(trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 'b', 'HandleVisibility', 'off')
-    scatter3(trajs.(trajNames{j}).x(1), trajs.(trajNames{j}).y(1), trajs.(trajNames{j}).z(1), 50, 'w', 'filled', 'HandleVisibility', 'off')
-end
-for j = (numSegs/2+1):numSegs
-    plot3(trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 'b', 'HandleVisibility', 'off')
-    scatter3(trajs.(trajNames{j}).x(end), trajs.(trajNames{j}).y(end), trajs.(trajNames{j}).z(end), 50, 'w', 'filled', 'HandleVisibility', 'off')
-end
+plot3(CR3BPTraj.x, CR3BPTraj.y, CR3BPTraj.z, 'b', 'DisplayName', "Traj.")
+plot3(CR3BPTraj.x, -CR3BPTraj.y, CR3BPTraj.z, 'b', 'HandleVisibility', 'off')
 axis equal
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon 3:2 Resonant (3:5 Syn.)", 'Interpreter', 'latex')
+title("Earth-Moon Rot.", 'Interpreter', 'latex')
 leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-set(gca, 'Color', 'k');
+drawnow;
+set(leg.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+set(gca, 'Color', 'w');
 view(3)
-ax = gca;
-for j = 1:numSegs
-    plot2DProjections(ax, [2 2 1], trajs.(trajNames{j}).x, trajs.(trajNames{j}).y, trajs.(trajNames{j}).z, 0.15);
-end
+% ax = gca;
+% plot2DProjections(ax, [2 2 1], CR3BPTraj.x, CR3BPTraj.y, CR3BPTraj.z, 0.15);
 hold off
-% exportgraphics(fig1, 'PlotCR3BPTraj_1.png', 'BackgroundColor', 'k')
+% exportgraphics(fig1, 'PlotCR3BPTraj_1.png', 'BackgroundColor', 'w')

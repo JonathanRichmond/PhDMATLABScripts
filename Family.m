@@ -3,7 +3,7 @@
 %%% C: 3 July 2025
 
 clear
-load('../PhDScripts/FamilyData/CR3BPEMLFRPros.mat')
+load('../PhDScripts/FamilyData/CR3BPEMLFRProsSpatial.mat')
 k = length(LFRPros.trajs);
 
 %% Earth-Moon Data
@@ -68,17 +68,18 @@ set(Moon, 'DisplayName', "Moon")
 scatter3(a1, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "$L_{1}$")
 scatter3(a2, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "$L_{2}$")
 % scatter3(a3, 0, 0, 20, 'g', 'filled', 'd', 'DisplayName', "$L_{3}$")
-scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
+% scatter3(a45, b4, 0, 20, 'b', 'filled', 'd', 'DisplayName', "$L_{4}$")
 % scatter3(a45, b5, 0, 20, [1 0 1], 'filled', 'd', 'DisplayName', "$L_{5}$")
 for j = 1:40:k
     traj = plot3(LFRPros.trajs{j}.x, LFRPros.trajs{j}.y, LFRPros.trajs{j}.z, 'b', 'HandleVisibility', 'off', 'DisplayName', "Lunar Free Return");
+    plot3(LFRPros.trajs{j}.x, -LFRPros.trajs{j}.y, LFRPros.trajs{j}.z, 'b', 'HandleVisibility', 'off')
     if j == 1
         set(traj, 'HandleVisibility', 'on')
     end
 end
 axis equal
 % axis
-axis([-0.12 1.24 -0.05 0.87])
+% axis([-0.12 1.24 -0.05 0.87])
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
@@ -86,6 +87,6 @@ zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
 title("Earth-Moon Rot.", 'Interpreter', 'latex')
 legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
-view(2)
+view(3)
 hold off
 % exportgraphics(fig1, 'Family_1.png', 'BackgroundColor', 'k')
