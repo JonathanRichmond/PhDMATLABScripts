@@ -1,5 +1,6 @@
 *.asv
 *.bsp
+*.log
 *.mp4
 *.svg
 *.tls.pc.txt
