@@ -119,7 +119,7 @@ leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 view(2)
 hold off
-% exportgraphics(fig2, 'PeriapsisMap_2.png', 'BackgroundColor', 'k')
+exportgraphics(fig2, 'PeriapsisMap_2.png', 'BackgroundColor', 'k')
 
 %% Trajectory Plots
 % fig3 = figure("Position", [200 100 1200 750]);
