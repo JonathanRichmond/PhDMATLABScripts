@@ -1,12 +1,17 @@
 %%% PeriapsisMap.jl
 %%% Jonathan Richmond
 %%% C: 24 October 2025
-%%% U: 12 November 2025
+%%% U: 18 November 2025
 
 clear
 % set(0, 'DefaultFigureVisible', 'off');
 set(0, 'DefaultFigureVisible', 'on');
-load('../PhDScripts/Output/PeriapsisMap.mat')
+load('../PhDScripts/Output//PeriapsisMaps/PeriapsisMap.mat')
+% load('../PhDScripts/Output/PeriapsisMaps/PeriapsisMap_3_0663.mat')
+% load('../PhDScripts/Output/PeriapsisMaps/PeriapsisMap_3_0.mat')
+% load('../PhDScripts/Output/PeriapsisMaps/PeriapsisMap_3_0663_Moon.mat')
+% load('../PhDScripts/Output/PeriapsisMaps/PeriapsisMap_3_0_Moon.mat')
+% load('../PhDScripts/Output/PeriapsisMaps/PeriapsisMap_3_0663_Manifold.mat')
 n = length(flagsBCR4BP);
 
 %% Earth-Moon Data
@@ -44,11 +49,11 @@ colorMap(7,:) = 0.7*[1, 1, 1];
 colorMap(8,:) = [1, 0, 0];
 colorMap(9,:) = [0, 0, 0];
 
-% xMan = zeros(length(manifold), 1);
-% yMan = zeros(length(manifold), 1);
-% for j = 1:length(manifold)
-%     xMan(j) = manifold{j}(1);
-%     yMan(j) = manifold{j}(2);
+% peri = 5;
+% for j = 1:8
+%     if j ~= peri+1
+%         colorMap(j,:) = 0.7*[1, 1, 1];
+%     end
 % end
 
 %% CR3BP Periapsis Map
@@ -64,7 +69,7 @@ scatter(nan, nan, 20, 0.7*[1, 1, 1], 'filled', 'DisplayName', "Capture")
 scatter(nan, nan, 20, [1, 0, 0], 'filled', 'DisplayName', "Impact")
 axis equal
 % ax = axis;
-% scatter(xMan, yMan, 5, 'w', 'filled', 'DisplayName', "Stable Manifold")
+% scatter(xManifold, yManifold, 3, 'w', 'filled', 'DisplayName', "Stable Manifold")
 % axis(ax)
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
@@ -83,7 +88,7 @@ hold off
 % exportgraphics(fig1, 'PeriapsisMap_1.png', 'BackgroundColor', 'k')
 
 %% BCR4BP Periapsis Map
-t = 2;
+t = 1;
 fig2 = figure("Position", [200 100 1200 750]);
 hold on
 scatter(xPoints, yPoints, 1.75, colorMap(flagsBCR4BP{t}+1,:), 'filled', 'HandleVisibility', 'off')
@@ -94,8 +99,10 @@ set(Moon, 'DisplayName', "Moon")
 % plot(RH/lstar*cos(linspace(0, 2*pi, 101)), RH/lstar*sin(linspace(0, 2*pi, 101)), 'w--', 'DisplayName', "Hills Radius")
 scatter(nan, nan, 20, 0.7*[1, 1, 1], 'filled', 'DisplayName', "Capture")
 scatter(nan, nan, 20, [1, 0, 0], 'filled', 'DisplayName', "Impact")
-% scatter(xMan, yMan, 5, 'w', 'filled', 'DisplayName', "Stable Manifold")
 axis equal
+% ax = axis;
+% scatter(xManifold, yManifold, 3, 'w', 'filled', 'DisplayName', "Stable Manifold")
+% axis(ax)
 grid on
 xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
@@ -138,8 +145,11 @@ hold off
 % set(Earth, 'DisplayName', "Earth")
 % Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
 % set(Moon, 'DisplayName', "Moon")
-% plot(Traj12.x, Traj12.y, 'c', 'DisplayName', "Trajectory")
-% scatter(Traj12.x(1), Traj12.y(1), 50, 'w', '*', 'DisplayName', "S$B_{1}$ Peri.")
+% plot(RH/lstar*cos(linspace(0, 2*pi, 101))+1-muSB1, RH/lstar*sin(linspace(0, 2*pi, 101)), 'w--', 'DisplayName', "Hills Radius")
+% plot(PreBurn.x, PreBurn.y, 'Color', 0.7*[1, 1, 1], 'DisplayName', "Old Traj.")
+% plot(NoBurn.x, NoBurn.y, 'Color', 0.7*[1, 1, 1], 'HandleVisibility', 'off')
+% plot(PostBurn.x, PostBurn.y, 'g', 'DisplayName', "New Traj.")
+% scatter(PostBurn.x(1), PostBurn.y(1), 50, 'w', '^', 'filled', 'DisplayName', "$\Delta v="+num2str(deltav*1000, '%.2f')+"$ m/s")
 % axis equal
 % grid on
 % xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
@@ -151,10 +161,45 @@ hold off
 % hold off
 % % exportgraphics(fig4, 'PeriapsisMap_4.png', 'BackgroundColor', 'k')
 
+%% All Angles Map
+% flagsM = cell2mat(flagsBCR4BP(:).');   % each row is flagsBCR4BP{j}
+% flagsAllBCR4BP = flagsBCR4BP{1};
+% flagsAllBCR4BP(any(flagsM == peri, 2)) = peri;
+% xLobe = xPoints(flagsAllBCR4BP == peri);
+% yLobe = yPoints(flagsAllBCR4BP == peri);
+% area = length(xLobe)/length(flagsAllBCR4BP);
+% 
+% fig5 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xPoints, yPoints, 1.75, colorMap(flagsAllBCR4BP+1,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstar, [-mu, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstar, [1-mu, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% % plot(RH/lstar*cos(linspace(0, 2*pi, 101)), RH/lstar*sin(linspace(0, 2*pi, 101)), 'w--', 'DisplayName', "Hills Radius")
+% scatter(nan, nan, 20, 0.7*[1, 1, 1], 'filled', 'DisplayName', "Capture")
+% scatter(nan, nan, 20, [1, 0, 0], 'filled', 'DisplayName', "Impact")
+% axis equal
+% grid on
+% xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+% title("Periapsis Map (BCR4BP) $JC="+num2str(JC)+"$", 'Interpreter', 'latex')
+% cb5 = colorbar;
+% colormap(colorMap(1:6,:));
+% caxis([-0.5 5.5]);
+% cb5.Ticks = 0:5;
+% cb5.TickLabels = string(0:5);
+% cb5.Label.String = 'Periapses';
+% leg5 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% % exportgraphics(fig5, 'PeriapsisMap_5.png', 'BackgroundColor', 'k')
+
 %% Animation
 % % Video Object and Figure Params
-% writerObj = VideoWriter('PeriapsisMap_3_0663_500.mp4', 'MPEG-4');
-% writerObj.FrameRate = 5;
+% writerObj = VideoWriter('PeriapsisMap_3_0663_500_Moon.mp4', 'MPEG-4');
+% writerObj.FrameRate = 20;
 % writerObj.Quality = 100;
 % open(writerObj);
 % fig = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
@@ -163,7 +208,7 @@ hold off
 % box on
 % 
 % % Plot Loop
-% for t = 1:length(moonAngles)
+% for t = 1:length(thetaS)
 %     fig;
 % 
 %     hold on
@@ -175,24 +220,27 @@ hold off
 %     scatter(nan, nan, 20, 0.7*[1, 1, 1], 'filled', 'DisplayName', "Capture")
 %     scatter(nan, nan, 20, [1, 0, 0], 'filled', 'DisplayName', "Impact")
 %     axis equal
+%     ax = axis;
+%     scatter(xManifold, yManifold, 3, 'w', 'filled', 'DisplayName', "Stable Manifold")
+%     axis(ax)
 %     grid on
 %     xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
 %     ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
 %     title("Periapsis Map $JC="+num2str(JC)+"$ $|$ $\theta_{S}="+num2str(thetaS(t)*180/pi)+"^\circ$", 'Interpreter', 'latex')
-%     cb2 = colorbar;
+%     cb = colorbar;
 %     colormap(colorMap(1:6,:));
 %     caxis([-0.5 5.5]);
-%     cb2.Ticks = 0:5;
-%     cb2.TickLabels = string(0:5);
-%     cb2.Label.String = 'Periapses';
-%     leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+%     cb.Ticks = 0:5;
+%     cb.TickLabels = string(0:5);
+%     cb.Label.String = 'Periapses';
+%     leg = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 %     set(gca, 'Color', 'k');
 %     view(2)
 %     hold off
 % 
 %     frame = getframe(gcf);
 %     writeVideo(writerObj, frame);
-%     if t == length(moonAngles)
+%     if t == length(thetaS)
 %         writeVideo(writerObj, frame);
 %     end
 %     clf
