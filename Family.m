@@ -1,5 +1,5 @@
 %%% Plot Family
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 3 July 2025
 
 clear

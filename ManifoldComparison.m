@@ -1,5 +1,5 @@
 %%% ManifoldComparison.jl
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 10 June 2025
 %%% U: 10 July 2025
 

@@ -1,5 +1,5 @@
 %%% BCR4BPDev.jl
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 19 February 2025
 %%% U: 9 April 2025
 

@@ -1,5 +1,5 @@
 %%% getZVC
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 8 April 2025
 
 function ZVC = getZVC(muEM, mS, aS, thetaS, H, axisLimits, numPoints, lineSpec)

@@ -1,5 +1,5 @@
 %%% plotColorLine
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 10 June 2025
 %%% U: 12 June 2025
 

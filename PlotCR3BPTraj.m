@@ -1,5 +1,5 @@
 %%% Plot CR3BP Trajectory
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 17 January 2025
 %%% U: 22 July 2025
 

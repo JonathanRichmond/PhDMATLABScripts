@@ -1,5 +1,5 @@
 %%% getHEM
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 8 April 2025
 
 function HEM = getHEM(muEM, mS, aS, q)

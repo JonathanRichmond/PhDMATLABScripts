@@ -1,5 +1,5 @@
 %%% PeriapsisMap.jl
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 24 October 2025
 %%% U: 2 December 2025
 

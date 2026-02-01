@@ -1,5 +1,5 @@
 %%% getSPICEEclipJ2000
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 30 October 2023
 %%% U: 18 March 2025
 

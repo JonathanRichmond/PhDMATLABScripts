@@ -1,5 +1,5 @@
 %%% Import Julia Data Test
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 17 January 2025
 
 load("../PhDScripts/Output/Test.mat")

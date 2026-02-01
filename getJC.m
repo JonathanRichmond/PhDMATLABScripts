@@ -1,5 +1,5 @@
 %%% getJC
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 2 April 2025
 
 function JC = getJC(mu, q)

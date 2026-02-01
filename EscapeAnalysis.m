@@ -1,5 +1,5 @@
 %%% EscapeAnalysis.jl
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 22 September 2025
 %%% U: 24 October 2025
 

@@ -1,5 +1,5 @@
 %%% Plot BCR4BP Trajectory
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 11 June 2025
 %%% U: 23 June 2025
 

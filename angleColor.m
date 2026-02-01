@@ -1,5 +1,5 @@
 %%% angleColor
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 19 February 2025
 
 function [colors] = angleColor(values)

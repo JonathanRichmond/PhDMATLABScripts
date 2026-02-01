@@ -1,5 +1,5 @@
 %%% getCR3BPZVC
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 17 June 2025
 
 function ZVC = getCR3BPZVC(mu, JC, axisLimits, numPoints, lineSpec)

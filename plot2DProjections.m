@@ -1,5 +1,5 @@
 %%% plot2DProjections
-%%% Jonathan Richmond
+%%% Jonathan LeFevre Richmond
 %%% C: 4 March 2025
 
 function [] = plot2DProjections(ax, limits, vec1, vec2, vec3, darkness)
