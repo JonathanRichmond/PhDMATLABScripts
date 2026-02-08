@@ -1,7 +1,7 @@
 %%% rotToP1EclipJ2000
 %%% Jonathan LeFevre Richmond
 %%% C: 29 May 2024
-%%% U: 31 January 2026
+%%% U: 7 February 2026
 
 function P1EclipJ2000States = rotToP1EclipJ2000(mu, initialEpoch, P1, gm1, P2, lstar, tstar, times, states)
 
@@ -19,7 +19,7 @@ P1EclipJ2000States = zeros(length(times), 6);
 for i = 1:length(times)
     stateDim = [states(i,1:3).*lstar, states(i,4:6).*lstar./tstar];
     statePrimaryDim = stateDim-[-mu*lstar, 0, 0, 0, 0, 0];
-    P2Elements = [lstar, 0, P2SPICEElements(3:5), P2SPICEElements(6)+times(i), initialEpochTime+timesDim(i), P2SPICEElements(8)]';
+    P2Elements = [lstar, 0, P2SPICEElements(3:5), P2SPICEElements(9)+times(i), initialEpochTime+timesDim(i), P2SPICEElements(8)]';
     P2StateDim = cspice_conics(P2Elements, initialEpochTime+timesDim(i));
     xhat = P2StateDim(1:3)./lstar;
     zhat = cross(P2StateDim(1:3), P2StateDim(4:6))./norm(cross(P2StateDim(1:3), P2StateDim(4:6)));

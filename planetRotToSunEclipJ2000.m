@@ -1,7 +1,7 @@
 %%% planetRotToSunEclipJ2000
 %%% Jonathan LeFevre Richmond
 %%% C: 30 October 2023
-%%% U: 31 January 2026
+%%% U: 7 February 2026
 
 function SunEclipJ2000States = planetRotToSunEclipJ2000(mu, initialEpoch, body, lstar, tstar, times, states)
 
@@ -20,7 +20,7 @@ SunEclipJ2000States = zeros(length(times), 6);
 for i = 1:length(times)
     stateDim = [states(i,1:3).*lstar, states(i,4:6).*lstar./tstar];
     statePrimaryDim = stateDim-[(-1*mu)*lstar, 0, 0, 0, 0, 0];
-    bodyElements = [lstar, 0, bodySPICEElements(3:5), bodySPICEElements(6)+times(i), initialEpochTime+timesDim(i), bodySPICEElements(8)]';
+    bodyElements = [lstar, 0, bodySPICEElements(3:5), bodySPICEElements(9)+times(i), initialEpochTime+timesDim(i), bodySPICEElements(8)]';
     bodyStateDim = cspice_conics(bodyElements, initialEpochTime+timesDim(i));
     xhat = bodyStateDim(1:3)./lstar;
     zhat = cross(bodyStateDim(1:3), bodyStateDim(4:6))./norm(cross(bodyStateDim(1:3), bodyStateDim(4:6)));

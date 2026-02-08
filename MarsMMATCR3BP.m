@@ -4,8 +4,8 @@
 %%% U: 3 February 2026
 
 clear
-data = load('../PhDScripts/Output/MarsMMATCR3BP.mat');
-transfers = cellfun(@(n) data.(n), fieldnames(data));
+transferData = load('../PhDScripts/Output/MarsMMATCR3BP.mat');
+transfers = cellfun(@(n) transferData.(n), fieldnames(transferData));
 n_transfers = length(transfers);
 disp("Total transfers: "+n_transfers)
 TOFs = zeros(n_transfers,1);
@@ -264,7 +264,7 @@ hold off
 %% Sun-Earth Trajectory Plot
 fig2 = figure("Position", [200 100 1200 750]);
 hold on
-Earth = plot3DBody("Earth", 10*RE/lstarSE, [1-muSE, 0, 0]);
+Earth = plot3DBody("Earth", RE/lstarSE, [1-muSE, 0, 0]);
 set(Earth, 'DisplayName', "Earth (x10)")
 plot3(q_m_SE(:,1), q_m_SE(:,2), q_m_SE(:,3), 'w--', 'DisplayName', "Moon Traj")
 scatter3(a1SE, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SE $L_{1}$")
