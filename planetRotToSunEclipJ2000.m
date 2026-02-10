@@ -1,11 +1,11 @@
 %%% planetRotToSunEclipJ2000
 %%% Jonathan LeFevre Richmond
 %%% C: 30 October 2023
-%%% U: 7 February 2026
+%%% U: 9 February 2026
 
 function SunEclipJ2000States = planetRotToSunEclipJ2000(mu, initialEpoch, body, lstar, tstar, times, states)
 
-cspice_furnsh({'naif0012.tls', 'de430.bsp', 'de440.bsp', 'mar097.bsp'}); % Load kernels
+cspice_furnsh({'naif0012.tls', 'de430.bsp', 'de440.bsp', 'mar099s.bsp'}); % Load kernels
 gmS = 1.3271244004193930E11; % Sun gravitational parameter [km^3/s^2]
 
 [bodyInitialStateDim, ~] = getSPICEEclipJ2000(initialEpoch, 0, body, 'Sun'); % Body initial state vector [dim]

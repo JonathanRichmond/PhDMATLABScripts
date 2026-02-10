@@ -1,11 +1,11 @@
 %%% P2EclipJ2000ToRot
 %%% Jonathan LeFevre Richmond
 %%% C: 29 May 2024
-%%% U: 7 February 2026
+%%% U: 9 February 2026
 
 function RotStates = P2EclipJ2000ToRot(mu, initialEpoch, P1, gm1, P2, lstar, tstar, times, states)
 
-cspice_furnsh({'naif0012.tls', 'de430.bsp', 'de440.bsp', 'mar097.bsp'}); % Load kernels
+cspice_furnsh({'naif0012.tls', 'de430.bsp', 'de440.bsp', 'mar099s.bsp'}); % Load kernels
 
 [P2InitialStateDim, ~] = getSPICEEclipJ2000(initialEpoch, 0, P2, P1); % Body initial state vector [dim]
 initialEpochTime = cspice_str2et(initialEpoch);

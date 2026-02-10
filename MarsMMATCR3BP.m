@@ -1,10 +1,10 @@
 %%% MarsMMATCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 31 January 2026
-%%% U: 3 February 2026
+%%% U: 9 February 2026
 
 clear
-transferData = load('../PhDScripts/Output/MarsMMATCR3BP.mat');
+transferData = load('../PhDScripts/Output/MMAT/MarsMMATCR3BP_3_03_L1Halo_3_0001857_L1Halo.mat');
 transfers = cellfun(@(n) transferData.(n), fieldnames(transferData));
 n_transfers = length(transfers);
 disp("Total transfers: "+n_transfers)
@@ -375,3 +375,17 @@ set(gca, 'Color', 'k');
 view(2)
 hold off
 % exportgraphics(fig6, 'MarsMMATCR3BP_6.png', 'BackgroundColor', 'k')
+
+fig7 = figure("Position", [200 100 1200 750]);
+hold on
+scatter(TOFs/24/3600/365.25, Deltavs, 10, 'filled', 'DisplayName', "$JC_{EM}=3.03$")
+axis([2 7 4 8])
+grid on
+xlabel("TOF [yrs]", 'Interpreter', 'latex')
+ylabel("$\Delta v$ [km/s]", 'Interpreter', 'latex')
+title("$L_{1}$ Halo - $3.0001857$ $L_{1}$ Halo", 'Interpreter', 'latex')
+leg7 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+set(gca, 'Color', 'k');
+view(2)
+hold off
+% exportgraphics(fig7, 'MarsMMATCR3BP_7.png', 'BackgroundColor', 'k')
