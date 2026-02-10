@@ -1,7 +1,14 @@
-%%% Import Julia Data Test
+%%% Test.m
 %%% Jonathan LeFevre Richmond
-%%% C: 17 January 2025
+%%% U: 9 February 2026
 
 load("../PhDScripts/Output/Test.mat")
 
-plot(x, y)
+figure
+plot(r, a)
+
+figure
+plot(r, e)
+
+figure
+semilogy(ra, d)

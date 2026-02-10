@@ -23,7 +23,7 @@ end
 Deltavs = Deltav_1s+Deltav_2s;
 [minDeltav, minDeltavIdx] = min(Deltavs);
 [minTOF, minTOFIdx] = min(TOFs);
-transfer = transfers(minDeltavIdx);
+transfer = transfers(minTOFIdx);
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -379,6 +379,7 @@ hold off
 fig7 = figure("Position", [200 100 1200 750]);
 hold on
 scatter(TOFs/24/3600/365.25, Deltavs, 10, 'filled', 'DisplayName', "$JC_{EM}=3.03$")
+yline(5.39, 'w--', 'DisplayName', "Modified Hohmann Transfer")
 axis([2 7 4 8])
 grid on
 xlabel("TOF [yrs]", 'Interpreter', 'latex')
