@@ -1,11 +1,10 @@
-%%% MarsMMATCR3BP.jl
+%%% VenusMMATCR3BP.jl
 %%% Jonathan LeFevre Richmond
-%%% C: 31 January 2026
-%%% U: 12 February 2026
+%%% C: 16 February 2026
 
 clear
 
-transferData = load('../PhDScripts/Output/MMAT/MarsMMATCR3BP_3_03_L1Halo_3_0001857_L1Halo.mat');
+transferData = load('../PhDScripts/Output/MMAT/VenusMMATCR3BP_3_03_L1Halo_3_0001857_L1Halo.mat');
 transfers = cellfun(@(n) transferData.(n), fieldnames(transferData));
 n_transfers = length(transfers);
 disp("Total transfers: "+n_transfers)
@@ -13,13 +12,13 @@ TOFs = zeros(n_transfers,1);
 Deltav_1s = zeros(n_transfers,1);
 Deltav_2s = zeros(n_transfers,1);
 theta_E_0s = zeros(n_transfers,1);
-theta_M_0s = zeros(n_transfers,1);
+theta_V_0s = zeros(n_transfers,1);
 for j = 1:length(transfers)
     TOFs(j) = transfers(j).TOF;
     Deltav_1s(j) = transfers(j).Deltav_1;
     Deltav_2s(j) = transfers(j).Deltav_2;
     theta_E_0s(j) = transfers(j).theta_dep_0*180/pi;
-    theta_M_0s(j) = transfers(j).theta_arr_0*180/pi;
+    theta_V_0s(j) = transfers(j).theta_arr_0*180/pi;
 end
 Deltavs = Deltav_1s+Deltav_2s;
 [~, sortDeltavs]= sort(Deltavs);
@@ -132,60 +131,60 @@ a45SE = 0.5-muSE;
 b4SE = sqrt(3)/2;
 b5SE = -b4SE;
 
-%% Sun-Mars Data
-gmM = 4.282837362069909E4; % Mars gravitational parameter [km^3/s^2]
-mM = gmM/6.67384E-20; % Mars mass [kg]
-RM = 3.3895266666666666E3; % Mars radius [km]
+%% Sun-Venus Data
+gmV = 3.2485859200000000E5; % Venus gravitational parameter [km^3/s^2]
+mV = gmV/6.67384E-20; % Venus mass [kg]
+RV = 6.0518000000000002E3; % Venus radius [km]
 
-muSM = gmM/(gmS+gmM); % Mass ratio
-mstarSM = (gmS+gmM)/6.67384E-20; % Characteristic mass [kg]
-lstarSM = 2.2794082723873448E8; % Characteristic length [km]
-tstarSM = sqrt(lstarSM^3/(gmS+gmM)); % Characteristic time [s]
+muSV = gmV/(gmS+gmV); % Mass ratio
+mstarSV = (gmS+gmV)/6.67384E-20; % Characteristic mass [kg]
+lstarSV = 1.0820891506628585E8; % Characteristic length [km]
+tstarSV = sqrt(lstarSV^3/(gmS+gmV)); % Characteristic time [s]
 
-g1SM = muSM; % Initial guess
+g1SV = muSV; % Initial guess
 delg1 = 1;
 while abs(delg1) > eps
-    f = ((1-muSM)/((1-g1SM)^2))-(muSM/(g1SM^2))-1+muSM+g1SM;
-    fprime = ((2*(1-muSM))/((1-g1SM)^3))+((2*muSM)/(g1SM^3))+1;
-    g1SMnew = g1SM-(f/fprime);
-    delg1 = g1SMnew-g1SM;
-    g1SM = g1SMnew;
+    f = ((1-muSV)/((1-g1SV)^2))-(muSV/(g1SV^2))-1+muSV+g1SV;
+    fprime = ((2*(1-muSV))/((1-g1SV)^3))+((2*muSV)/(g1SV^3))+1;
+    g1SVnew = g1SV-(f/fprime);
+    delg1 = g1SVnew-g1SV;
+    g1SV = g1SVnew;
     i = i+1;
 end
-a1SM = 1-muSM-g1SM;
+a1SV = 1-muSV-g1SV;
 
-g2SM = muSM; % Initial guess
+g2SV = muSV; % Initial guess
 delg2 = 1;
 while abs(delg2) > eps
-    f = ((1-muSM)/((1+g2SM)^2))+(muSM/(g2SM^2))-1+muSM-g2SM;
-    fprime = ((-2*(1-muSM))/((1+g2SM)^3))-((2*muSM)/(g2SM^3))-1;
-    g2SMnew = g2SM-(f/fprime);
-    delg2 = g2SMnew-g2SM;
-    g2SM = g2SMnew;
+    f = ((1-muSV)/((1+g2SV)^2))+(muSV/(g2SV^2))-1+muSV-g2SV;
+    fprime = ((-2*(1-muSV))/((1+g2SV)^3))-((2*muSV)/(g2SV^3))-1;
+    g2SVnew = g2SV-(f/fprime);
+    delg2 = g2SVnew-g2SV;
+    g2SV = g2SVnew;
     i = i+1;
 end
-a2SM = 1-muSM+g2SM;
+a2SV = 1-muSV+g2SV;
 
-g3SM = muSM; %Initial guess
+g3SV = muSV; %Initial guess
 delg3 = 1;
 while abs(delg3) > eps
-    f = ((1-muSM)/(g3SM^2))+(muSM/((1+g3SM)^2))-muSM-g3SM;
-    fprime = ((-2*(1-muSM))/(g3SM^3))-((2*muSM)/((1+g3SM)^3))-1;
-    g3SMnew = g3SM-(f/fprime);
-    delg3 = g3SMnew-g3SM;
-    g3SM = g3SMnew;
+    f = ((1-muSV)/(g3SV^2))+(muSV/((1+g3SV)^2))-muSV-g3SV;
+    fprime = ((-2*(1-muSV))/(g3SV^3))-((2*muSV)/((1+g3SV)^3))-1;
+    g3SVnew = g3SV-(f/fprime);
+    delg3 = g3SVnew-g3SV;
+    g3SV = g3SVnew;
     i = i+1;
 end
-a3SM = -1*muSM-g3SM;
+a3SV = -1*muSV-g3SV;
 
-a45SM = 0.5-muSM;
-b4SM = sqrt(3)/2;
-b5SM = -b4SM;
+a45SV = 0.5-muSV;
+b4SV = sqrt(3)/2;
+b5SV = -b4SV;
 
 %% Design Variables
 RSoIm = lstarSE*(mm/mS)^(2/5); % Moon sphere of influence radius [km]
 RSoIE = 0.09877*lstarSE; % Earth sphere of influence radius [km]
-RSoIM = 0.05375*lstarSM; % Mars sphere of influence radius [km]
+RSoIV = 0.1107*lstarSV; % Venus sphere of influence radius [km]
 
 %% Frame Transformations
 e_dep_trans = transfer.t_0+transfer.departureManifoldArc1.TOF*tstarEM;
@@ -221,10 +220,10 @@ tspan_arr = e_arr_int+[0:(3600*24):transfer.arrivalConic.TOF, transfer.arrivalCo
 IC_arr = transfer.arrivalConic.state;
 arr_sol = ode89(ode, tspan_arr, IC_arr, odeOpts);
 
-t_SM = transfer.theta_arr_f+transfer.arrivalManifoldArc.t; % Because Mars is not yet realistically phased
-q_SM = [transfer.arrivalManifoldArc.x, transfer.arrivalManifoldArc.y, transfer.arrivalManifoldArc.z, transfer.arrivalManifoldArc.xdot, transfer.arrivalManifoldArc.ydot, transfer.arrivalManifoldArc.zdot];
-q_SM_SI = planetRotToSunEclipJ2000(muSM, transfer.initialEpoch, 'Mars', lstarSM, tstarSM, t_SM, q_SM);
-Q_SM_SI = [q_SM_SI(:,1:3).*lstarSM, q_SM_SI(:,4:6).*lstarSM./tstarSM];
+t_SV = transfer.theta_arr_f+transfer.arrivalManifoldArc.t; % Because Venus is not yet realistically phased
+q_SV = [transfer.arrivalManifoldArc.x, transfer.arrivalManifoldArc.y, transfer.arrivalManifoldArc.z, transfer.arrivalManifoldArc.xdot, transfer.arrivalManifoldArc.ydot, transfer.arrivalManifoldArc.zdot];
+q_SV_SI = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_SV, q_SV);
+Q_SV_SI = [q_SV_SI(:,1:3).*lstarSV, q_SV_SI(:,4:6).*lstarSV./tstarSV];
 
 t_m_EM = linspace(transfer.t_0/tstarEM, e_dep_SoI/tstarEM, 10001);
 q_m_EI_EM = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, t_m_EM, ones(10001, 1)*[1-muEM, 0, 0, 0, 0, 0]);
@@ -236,9 +235,9 @@ t_E_SE = linspace(transfer.t_0/tstarSE, transfer.t_0/tstarSE+2*pi, 10001);
 q_E_SI = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_E_SE, ones(10001, 1)*[1-muSE, 0, 0, 0, 0, 0]);
 Q_E_SI = [q_E_SI(:,1:3).*lstarSE, q_E_SI(:,4:6).*lstarSE./tstarSE];
 
-t_M_SM = linspace(transfer.theta_arr_f-2*pi, transfer.theta_arr_f, 10001);
-q_M_SI = planetRotToSunEclipJ2000(muSM, transfer.initialEpoch, 'Mars', lstarSM, tstarSM, t_M_SM, ones(10001, 1)*[1-muSM, 0, 0, 0, 0, 0]);
-Q_M_SI = [q_M_SI(:,1:3).*lstarSM, q_M_SI(:,4:6).*lstarSM./tstarSM];
+t_V_SV = linspace(transfer.theta_arr_f-2*pi, transfer.theta_arr_f, 10001);
+q_V_SI = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_V_SV, ones(10001, 1)*[1-muSV, 0, 0, 0, 0, 0]);
+Q_V_SI = [q_V_SI(:,1:3).*lstarSV, q_V_SI(:,4:6).*lstarSV./tstarSV];
 
 %% Earth-Moon Trajectory Plot
 fig1 = figure("Position", [200 100 1200 750]);
@@ -266,7 +265,7 @@ view(3)
 hold off
 % ax = gca;
 % ax.SortMethod = 'childorder';
-% exportgraphics(fig1, 'MarsMMATCR3BP_1.png', 'BackgroundColor', 'k')
+% exportgraphics(fig1, 'VenusMMATCR3BP_1.png', 'BackgroundColor', 'k')
 
 %% Sun-Earth Trajectory Plot
 fig2 = figure("Position", [200 100 1200 750]);
@@ -294,7 +293,7 @@ view(3)
 hold off
 % ax = gca;
 % ax.SortMethod = 'childorder';
-% exportgraphics(fig2, 'MarsMMATCR3BP_2.png', 'BackgroundColor', 'k')
+% exportgraphics(fig2, 'VenusMMATCR3BP_2.png', 'BackgroundColor', 'k')
 
 %% Heliocentric MMAT Plot
 fig3 = figure("Position", [200 100 1200 750]);
@@ -302,17 +301,17 @@ hold on
 Sun = plot3DBody("Sun", 10*RS, [0, 0, 0]);
 set(Sun, 'DisplayName', "Sun (x10)")
 plot3(Q_E_SI(:,1), Q_E_SI(:,2), Q_E_SI(:,3), 'g--', 'DisplayName', "Earth Orbit")
-plot3(Q_M_SI(:,1), Q_M_SI(:,2), Q_M_SI(:,3), 'r--', 'DisplayName', "Mars Orbit")
+plot3(Q_V_SI(:,1), Q_V_SI(:,2), Q_V_SI(:,3), 'Color', [1 0.5 0], 'DisplayName', "Venus Orbit")
 Earth = plot3DBody("Earth", 1000*RE, Q_E_SI(1,1:3));
 set(Earth, 'DisplayName', "Earth (x1000) at Dep.")
-Mars = plot3DBody("Mars", 1000*RM, Q_M_SI(end,1:3));
-set(Mars, 'DisplayName', "Mars (x1000) at Arr.")
+Venus = plot3DBody("Venus", 1000*RV, Q_V_SI(end,1:3));
+set(Venus, 'DisplayName', "Venus (x1000) at Arr.")
 plot3(Q_EM_SI(:,1), Q_EM_SI(:,2), Q_EM_SI(:,3), 'r', 'DisplayName', "Dep. CR3BP Arc")
 plot3(Q_SE_SI(:,1), Q_SE_SI(:,2), Q_SE_SI(:,3), 'r', 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
 plot3(dep_sol.y(1,:), dep_sol.y(2,:), dep_sol.y(3,:), 'm', 'DisplayName', "Dep. Conic")
 plot3(bridge_sol.y(1,:), bridge_sol.y(2,:), bridge_sol.y(3,:), 'Color', [0.5 0 0.5], 'DisplayName', "Bridge Conic")
 plot3(arr_sol.y(1,:), arr_sol.y(2,:), arr_sol.y(3,:), 'c', 'DisplayName', "Arr. Conic")
-plot3(Q_SM_SI(:,1), Q_SM_SI(:,2), Q_SM_SI(:,3), 'b', 'DisplayName', "Arr. CR3BP Arc")
+plot3(Q_SV_SI(:,1), Q_SV_SI(:,2), Q_SV_SI(:,3), 'b', 'DisplayName', "Arr. CR3BP Arc")
 scatter3(bridge_sol.y(1,1), bridge_sol.y(2,1), bridge_sol.y(3,1), 75, 'w', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
 scatter3(bridge_sol.y(1,end), bridge_sol.y(2,end), bridge_sol.y(3,end), 75, 'w', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
 axis equal
@@ -331,32 +330,32 @@ view(3)
 hold off
 % ax = gca;
 % ax.SortMethod = 'childorder';
-% exportgraphics(fig3, 'MarsMMATCR3BP_3.png', 'BackgroundColor', 'k')
+% exportgraphics(fig3, 'VenusMMATCR3BP_3.png', 'BackgroundColor', 'k')
 
-%% Sun-Mars Trajectory Plot
+%% Sun-Venus Trajectory Plot
 fig4 = figure("Position", [200 100 1200 750]);
 hold on
-Mars = plot3DBody("Mars", 10*RM/lstarSM, [1-muSM, 0, 0]);
-set(Mars, 'DisplayName', "Mars (x10)")
-scatter3(a1SM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SM $L_{1}$")
-scatter3(a2SM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SM $L_{2}$")
+Venus = plot3DBody("Venus", 10*RV/lstarSV, [1-muSV, 0, 0]);
+set(Venus, 'DisplayName', "Venus (x10)")
+scatter3(a1SV, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SV $L_{1}$")
+scatter3(a2SV, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SV $L_{2}$")
 plot3(transfer.arrivalOrbit.x, transfer.arrivalOrbit.y, transfer.arrivalOrbit.z, 'g--', 'DisplayName', "Arr. Orbit")
 plot3(transfer.arrivalManifoldArc.x(1:end-5), transfer.arrivalManifoldArc.y(1:end-5), transfer.arrivalManifoldArc.z(1:end-5), 'b', 'DisplayName', "Arr. CR3BP Arc")
-% plot3(1-muSM+RSoIM/lstarSM*cos(linspace(0, 2*pi, 101)), RSoIM/lstarSM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Mars SoI Radius")
+% plot3(1-muSV+RSoIV/lstarSV*cos(linspace(0, 2*pi, 101)), RSoIV/lstarSV*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Venus SoI Radius")
 axis equal
 grid on
-xlabel("$x$ [SM ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [SM ndim]", 'Interpreter', 'latex')
-hz = zlabel("$z$ [SM ndim]", 'Interpreter', 'latex');
+xlabel("$x$ [SV ndim]", 'Interpreter', 'latex')
+ylabel("$y$ [SV ndim]", 'Interpreter', 'latex')
+hz = zlabel("$z$ [SV ndim]", 'Interpreter', 'latex');
 % hz.Position = hz.Position+[-0.006 0 0.00275];
-title("Sun-Mars Rot.", 'Interpreter', 'latex')
+title("Sun-Venus Rot.", 'Interpreter', 'latex')
 leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 view(3)
 hold off
 % ax = gca;
 % ax.SortMethod = 'childorder';
-% exportgraphics(fig4, 'MarsMMATCR3BP_4.png', 'BackgroundColor', 'k')
+% exportgraphics(fig4, 'VenusMMATCR3BP_4.png', 'BackgroundColor', 'k')
 
 %% Family Plots
 fig5 = figure("Position", [200 100 1200 750]);
@@ -369,39 +368,39 @@ ylabel("TOF [yrs]", 'Interpreter', 'latex')
 title("MMAT Family Tradespace", 'Interpreter', 'latex')
 colormap(viridis)
 cb5 = colorbar;
-caxis([4 8])
+caxis([5 12])
 ylabel(cb5, "$\Delta v$ [km/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-cb5.Label.Position = cb5.Label.Position+[-2 2.1 0];
+cb5.Label.Position = cb5.Label.Position+[-2 3.6 0];
 set(gca, 'Color', 'k');
 view(2)
 hold off
-% exportgraphics(fig5, 'MarsMMATCR3BP_5.png', 'BackgroundColor', 'k')
+% exportgraphics(fig5, 'VenusMMATCR3BP_5.png', 'BackgroundColor', 'k')
 
 fig6 = figure("Position", [200 100 1200 750]);
 hold on
-scatter(wrapTo360(theta_E_0s), wrapTo360(theta_M_0s), 20, Deltavs, 'filled', 'HandleVisibility', 'off')
-scatter(wrapTo360((6.253075709008801*180/pi):1:((6.253075709008801+10*pi)*180/pi)), wrapTo360((0.027114456425096738*180/pi):(tstarSE/tstarSM):((0.027114456425096738+10*pi*tstarSE/tstarSM)*180/pi)), 20, 'w', 'HandleVisibility', 'off')
+scatter(wrapTo360(theta_E_0s), wrapTo360(theta_V_0s), 20, Deltavs, 'filled', 'HandleVisibility', 'off')
+scatter(wrapTo360((6.253075709008801*180/pi):1:((6.253075709008801+10*pi)*180/pi)), wrapTo360((5.679677667107661*180/pi):(tstarSE/tstarSV):((5.679677667107661+10*pi*tstarSE/tstarSV)*180/pi)), 20, 'w', 'HandleVisibility', 'off')
 axis equal
 axis([0 360 0 360])
 grid on
 xlabel("$\theta_{E,0}$ [deg]", 'Interpreter', 'latex')
-ylabel("$\theta_{M,0}$ [deg]", 'Interpreter', 'latex')
+ylabel("$\theta_{V,0}$ [deg]", 'Interpreter', 'latex')
 title("MMAT Family Tradespace", 'Interpreter', 'latex')
 colormap(viridis)
 cb6 = colorbar;
-caxis([4 8])
+caxis([5 12])
 ylabel(cb6, "$\Delta v$ [km/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-cb6.Label.Position = cb6.Label.Position+[-2 2.1 0];
+cb6.Label.Position = cb6.Label.Position+[-2 3.6 0];
 set(gca, 'Color', 'k');
 view(2)
 hold off
-% exportgraphics(fig6, 'MarsMMATCR3BP_6.png', 'BackgroundColor', 'k')
+% exportgraphics(fig6, 'VenusMMATCR3BP_6.png', 'BackgroundColor', 'k')
 
 fig7 = figure("Position", [200 100 1200 750]);
 hold on
 scatter(TOFs/24/3600/365.25, Deltavs, 10, 'filled', 'DisplayName', "$JC_{EM}=3.03$")
-yline(5.639, 'w', 'DisplayName', "Modified Hohmann Transfer") % L1
-axis([2 7 4 8])
+yline(6.104, 'w', 'DisplayName', "Modified Hohmann Transfer") % L1
+axis([3 7 5 12])
 grid on
 xlabel("TOF [yrs]", 'Interpreter', 'latex')
 ylabel("$\Delta v$ [km/s]", 'Interpreter', 'latex')
@@ -410,4 +409,4 @@ leg7 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 set(gca, 'Color', 'k');
 view(2)
 hold off
-% exportgraphics(fig7, 'MarsMMATCR3BP_7.png', 'BackgroundColor', 'k')
+% exportgraphics(fig7, 'VenusMMATCR3BP_7.png', 'BackgroundColor', 'k')
