@@ -1,7 +1,7 @@
 %%% MarsMMATCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 31 January 2026
-%%% U: 12 February 2026
+%%% U: 18 February 2026
 
 clear
 
@@ -26,7 +26,7 @@ Deltavs = Deltav_1s+Deltav_2s;
 [~, sortTOFs] = sort(TOFs);
 disp("Min. Deltav: "+Deltavs(sortDeltavs(1))+" km/s")
 disp("Min. TOF: "+TOFs(sortTOFs(1))/24/3600/365.25+" yrs")
-transfer = transfers(sortDeltavs(1));
+transfer = transfers(1);
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -241,122 +241,137 @@ q_M_SI = planetRotToSunEclipJ2000(muSM, transfer.initialEpoch, 'Mars', lstarSM, 
 Q_M_SI = [q_M_SI(:,1:3).*lstarSM, q_M_SI(:,4:6).*lstarSM./tstarSM];
 
 %% Earth-Moon Trajectory Plot
-fig1 = figure("Position", [200 100 1200 750]);
-hold on
-Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
-scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
-plot3(transfer.departureOrbit.x, transfer.departureOrbit.y, transfer.departureOrbit.z, 'g--', 'DisplayName', "Dep. Orbit")
-plot3(transfer.departureManifoldArc1.x, transfer.departureManifoldArc1.y, transfer.departureManifoldArc1.z, 'r', 'DisplayName', "Dep. CR3BP Arc")
-plot3(1-muEM+RSoIm/lstarEM*cos(linspace(0, 2*pi, 101)), RSoIm/lstarEM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Moon SoI Radius")
-axis equal
-grid on
-xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
-zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
-title("Earth-Moon Rot.", 'Interpreter', 'latex')
-leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% fig1 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% p11 = plot3WithArrows(transfer.departureOrbit.x, transfer.departureOrbit.y, transfer.departureOrbit.z, 'g--', 'NumArrows', 2, 'ArrowScale', 2);
+% set(p11, 'DisplayName', "Dep. Orbit")
+% p12 = plot3WithArrows(transfer.departureManifoldArc1.x, transfer.departureManifoldArc1.y, transfer.departureManifoldArc1.z, 'r');
+% set(p12, 'DisplayName', "Dep. CR3BPArc")
+% plot3(1-muEM+RSoIm/lstarEM*cos(linspace(0, 2*pi, 101)), RSoIm/lstarEM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'k:', 'DisplayName', "Moon SoI Radius")
+% axis equal
+% grid on
+% xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
+% zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+% % title("Earth-Moon Rot.", 'Interpreter', 'latex')
+% leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % drawnow;
 % set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(3)
-hold off
-% ax = gca;
-% ax.SortMethod = 'childorder';
-% exportgraphics(fig1, 'MarsMMATCR3BP_1.png', 'BackgroundColor', 'k')
+% set(gca, 'Color', 'w');
+% view(3)
+% hold off
+% % ax = gca;
+% % ax.SortMethod = 'childorder';
+% % exportgraphics(fig1, 'MarsMMATCR3BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Sun-Earth Trajectory Plot
-fig2 = figure("Position", [200 100 1200 750]);
-hold on
-Earth = plot3DBody("Earth", 10*RE/lstarSE, [1-muSE, 0, 0]);
-set(Earth, 'DisplayName', "Earth (x10)")
-plot3(q_m_SE(:,1), q_m_SE(:,2), q_m_SE(:,3), 'w--', 'DisplayName', "Moon Traj")
-scatter3(a1SE, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SE $L_{1}$")
-scatter3(a2SE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SE $L_{2}$")
-plot3(q_EM_SE(:,1), q_EM_SE(:,2), q_EM_SE(:,3), 'r', 'DisplayName', "Dep. CR3BP Arc")
-plot3(transfer.departureManifoldArc2.x(1:end-5), transfer.departureManifoldArc2.y(1:end-5), transfer.departureManifoldArc2.z(1:end-5), 'r', 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
-% plot3(1-muSE+RSoIE/lstarSE*cos(linspace(0, 2*pi, 101)), RSoIE/lstarSE*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Earth SoI Radius")
-axis equal
-grid on
-xlabel("$x$ [SE ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [SE ndim]", 'Interpreter', 'latex')
-hz = zlabel("$z$ [SE ndim]", 'Interpreter', 'latex');
-% hz.Position = hz.Position+[-0.01 0 0.002];
-title("Sun-Earth Rot.", 'Interpreter', 'latex')
-leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% fig2 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", 10*RE/lstarSE, [1-muSE, 0, 0]);
+% set(Earth, 'DisplayName', "Earth (x10)")
+% p21 = plot3WithArrows(q_m_SE(:,1), q_m_SE(:,2), q_m_SE(:,3), 'k--');
+% set(p21, 'DisplayName', "Moon Traj.")
+% % scatter3(a1SE, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SE $L_{1}$")
+% scatter3(a2SE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SE $L_{2}$")
+% p22 = plot3WithArrows(q_EM_SE(:,1), q_EM_SE(:,2), q_EM_SE(:,3), 'r', 'NumArrows', 2, 'ArrowScale', 2);
+% set(p22, 'DisplayName', "Dep. CR3BP Arc")
+% p23 = plot3WithArrows(transfer.departureManifoldArc2.x(1:end-7), transfer.departureManifoldArc2.y(1:end-7), transfer.departureManifoldArc2.z(1:end-7), 'r', 'ArrowScale', 0.5);
+% set(p23, 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
+% % plot3(1-muSE+RSoIE/lstarSE*cos(linspace(0, 2*pi, 101)), RSoIE/lstarSE*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'k:', 'DisplayName', "Earth SoI Radius")
+% axis equal
+% grid on
+% xlabel("$x$ [SE ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [SE ndim]", 'Interpreter', 'latex')
+% hz2 = zlabel("$z$ [SE ndim]", 'Interpreter', 'latex');
+% shiftZLabel(gca, hz2)
+% % title("Sun-Earth Rot.", 'Interpreter', 'latex')
+% leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % drawnow;
 % set(leg2.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(3)
-hold off
-% ax = gca;
-% ax.SortMethod = 'childorder';
-% exportgraphics(fig2, 'MarsMMATCR3BP_2.png', 'BackgroundColor', 'k')
+% set(gca, 'Color', 'w');
+% view(3)
+% hold off
+% % ax = gca;
+% % ax.SortMethod = 'childorder';
+% % exportgraphics(fig2, 'MarsMMATCR3BP_2.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Heliocentric MMAT Plot
-fig3 = figure("Position", [200 100 1200 750]);
-hold on
-Sun = plot3DBody("Sun", 10*RS, [0, 0, 0]);
-set(Sun, 'DisplayName', "Sun (x10)")
-plot3(Q_E_SI(:,1), Q_E_SI(:,2), Q_E_SI(:,3), 'g--', 'DisplayName', "Earth Orbit")
-plot3(Q_M_SI(:,1), Q_M_SI(:,2), Q_M_SI(:,3), 'r--', 'DisplayName', "Mars Orbit")
-Earth = plot3DBody("Earth", 1000*RE, Q_E_SI(1,1:3));
-set(Earth, 'DisplayName', "Earth (x1000) at Dep.")
-Mars = plot3DBody("Mars", 1000*RM, Q_M_SI(end,1:3));
-set(Mars, 'DisplayName', "Mars (x1000) at Arr.")
-plot3(Q_EM_SI(:,1), Q_EM_SI(:,2), Q_EM_SI(:,3), 'r', 'DisplayName', "Dep. CR3BP Arc")
-plot3(Q_SE_SI(:,1), Q_SE_SI(:,2), Q_SE_SI(:,3), 'r', 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
-plot3(dep_sol.y(1,:), dep_sol.y(2,:), dep_sol.y(3,:), 'm', 'DisplayName', "Dep. Conic")
-plot3(bridge_sol.y(1,:), bridge_sol.y(2,:), bridge_sol.y(3,:), 'Color', [0.5 0 0.5], 'DisplayName', "Bridge Conic")
-plot3(arr_sol.y(1,:), arr_sol.y(2,:), arr_sol.y(3,:), 'c', 'DisplayName', "Arr. Conic")
-plot3(Q_SM_SI(:,1), Q_SM_SI(:,2), Q_SM_SI(:,3), 'b', 'DisplayName', "Arr. CR3BP Arc")
-scatter3(bridge_sol.y(1,1), bridge_sol.y(2,1), bridge_sol.y(3,1), 75, 'w', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
-scatter3(bridge_sol.y(1,end), bridge_sol.y(2,end), bridge_sol.y(3,end), 75, 'w', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
-axis equal
-grid on
-xlabel("$X$ [km]", 'Interpreter', 'latex')
-ylabel("$Y$ [km]", 'Interpreter', 'latex')
-hz = zlabel("$Z$ [km]", 'Interpreter', 'latex');
-% hz.Position = hz.Position+[-6.25E8 0 2E8];
-title("Sun-Centered Ecliptic J2000 $|$ TOF = "+num2str(transfer.TOF/24/3600/365.25, 3)+" yrs", 'Interpreter', 'latex')
-disp("TOF: "+transfer.TOF/24/3600/365.25+" yrs")
-leg3 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% fig3 = figure("Position", [200 100 1200 750]);
+% hold on
+% Sun = plot3DBody("Sun", 10*RS, [0, 0, 0]);
+% set(Sun, 'DisplayName', "Sun (x10)")
+% p31 = plot3WithArrows(Q_E_SI(:,1), Q_E_SI(:,2), Q_E_SI(:,3), 'g--', 'NumArrows', 2);
+% set(p31, 'DisplayName', "Earth Orbit")
+% p32 = plot3WithArrows(Q_M_SI(:,1), Q_M_SI(:,2), Q_M_SI(:,3), 'r--', 'NumArrows', 2, 'ArrowScale', 0.75);
+% set(p32, 'DisplayName', "Mars Orbit")
+% Earth = plot3DBody("Earth", 1000*RE, Q_E_SI(1,1:3));
+% set(Earth, 'DisplayName', "Earth (x1000) at Dep.")
+% Mars = plot3DBody("Mars", 1000*RM, Q_M_SI(end,1:3));
+% set(Mars, 'DisplayName', "Mars (x1000) at Arr.")
+% p33 = plot3WithArrows(Q_EM_SI(:,1), Q_EM_SI(:,2), Q_EM_SI(:,3), 'r', 'NumArrows', 2);
+% set(p33, 'DisplayName', "Dep. CR3BP Arc")
+% p34 = plot3WithArrows(Q_SE_SI(:,1), Q_SE_SI(:,2), Q_SE_SI(:,3), 'r');
+% set(p34, 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
+% p35 = plot3WithArrows(dep_sol.y(1,:), dep_sol.y(2,:), dep_sol.y(3,:), 'm');
+% set(p35, 'DisplayName', "Dep. Conic")
+% p36 = plot3WithArrows(bridge_sol.y(1,:), bridge_sol.y(2,:), bridge_sol.y(3,:), 'Color', [0.5 0 0.5]);
+% set(p36, 'DisplayName', "Bridge Conic")
+% p37 = plot3WithArrows(arr_sol.y(1,:), arr_sol.y(2,:), arr_sol.y(3,:), 'c', 'ArrowScale', 0.75);
+% set(p37, 'DisplayName', "Arr. Conic")
+% p38 = plot3WithArrows(Q_SM_SI(:,1), Q_SM_SI(:,2), Q_SM_SI(:,3), 'b', 'FlipDir', 'On', 'ArrowScale', 0.75);
+% set(p38, 'DisplayName', "Arr. CR3BP Arc")
+% scatter3(bridge_sol.y(1,1), bridge_sol.y(2,1), bridge_sol.y(3,1), 75, 'k', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
+% scatter3(bridge_sol.y(1,end), bridge_sol.y(2,end), bridge_sol.y(3,end), 75, 'k', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
+% axis equal
+% grid on
+% xlabel("$X$ [km]", 'Interpreter', 'latex')
+% ylabel("$Y$ [km]", 'Interpreter', 'latex')
+% hz3 = zlabel("$Z$ [km]", 'Interpreter', 'latex');
+% shiftZLabel(gca, hz3)
+% % title("Sun-Centered Ecliptic J2000 $|$ TOF = "+num2str(transfer.TOF/24/3600/365.25, 3)+" yrs", 'Interpreter', 'latex')
+% disp("TOF: "+transfer.TOF/24/3600/365.25+" yrs")
+% leg3 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % drawnow;
 % set(leg3.EntryContainer.NodeChildren(end-3).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(3)
-hold off
-% ax = gca;
-% ax.SortMethod = 'childorder';
-% exportgraphics(fig3, 'MarsMMATCR3BP_3.png', 'BackgroundColor', 'k')
+% set(gca, 'Color', 'w');
+% view(3)
+% hold off
+% % ax = gca;
+% % ax.SortMethod = 'childorder';
+% % exportgraphics(fig3, 'MarsMMATCR3BP_3.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Sun-Mars Trajectory Plot
-fig4 = figure("Position", [200 100 1200 750]);
-hold on
-Mars = plot3DBody("Mars", 10*RM/lstarSM, [1-muSM, 0, 0]);
-set(Mars, 'DisplayName', "Mars (x10)")
-scatter3(a1SM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SM $L_{1}$")
-scatter3(a2SM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SM $L_{2}$")
-plot3(transfer.arrivalOrbit.x, transfer.arrivalOrbit.y, transfer.arrivalOrbit.z, 'g--', 'DisplayName', "Arr. Orbit")
-plot3(transfer.arrivalManifoldArc.x(1:end-5), transfer.arrivalManifoldArc.y(1:end-5), transfer.arrivalManifoldArc.z(1:end-5), 'b', 'DisplayName', "Arr. CR3BP Arc")
-% plot3(1-muSM+RSoIM/lstarSM*cos(linspace(0, 2*pi, 101)), RSoIM/lstarSM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Mars SoI Radius")
-axis equal
-grid on
-xlabel("$x$ [SM ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [SM ndim]", 'Interpreter', 'latex')
-hz = zlabel("$z$ [SM ndim]", 'Interpreter', 'latex');
-% hz.Position = hz.Position+[-0.006 0 0.00275];
-title("Sun-Mars Rot.", 'Interpreter', 'latex')
-leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-set(gca, 'Color', 'k');
-view(3)
-hold off
-% ax = gca;
-% ax.SortMethod = 'childorder';
-% exportgraphics(fig4, 'MarsMMATCR3BP_4.png', 'BackgroundColor', 'k')
+% fig4 = figure("Position", [200 100 1200 750]);
+% hold on
+% Mars = plot3DBody("Mars", 10*RM/lstarSM, [1-muSM, 0, 0]);
+% set(Mars, 'DisplayName', "Mars (x10)")
+% scatter3(a1SM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SM $L_{1}$")
+% % scatter3(a2SM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SM $L_{2}$")
+% p41 = plot3WithArrows(transfer.arrivalOrbit.x, transfer.arrivalOrbit.y, transfer.arrivalOrbit.z, 'g--', 'NumArrows', 2, 'ArrowScale', 1.5);
+% set(p41, 'DisplayName', "Arr. Orbit")
+% p42 = plot3WithArrows(transfer.arrivalManifoldArc.x(1:end-6), transfer.arrivalManifoldArc.y(1:end-6), transfer.arrivalManifoldArc.z(1:end-6), 'b', 'FlipDir', 'On', 'ArrowScale', 0.5);
+% set(p42, 'DisplayName', "Arr. CR3BP Arc")
+% % plot3(1-muSM+RSoIM/lstarSM*cos(linspace(0, 2*pi, 101)), RSoIM/lstarSM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'k:', 'DisplayName', "Mars SoI Radius")
+% axis equal
+% grid on
+% xlabel("$x$ [SM ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [SM ndim]", 'Interpreter', 'latex')
+% hz4 = zlabel("$z$ [SM ndim]", 'Interpreter', 'latex');
+% shiftZLabel(gca, hz4)
+% % title("Sun-Mars Rot.", 'Interpreter', 'latex')
+% leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% set(gca, 'Color', 'w');
+% view(3)
+% hold off
+% % ax = gca;
+% % ax.SortMethod = 'childorder';
+% % exportgraphics(fig4, 'MarsMMATCR3BP_4.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Family Plots
 fig5 = figure("Position", [200 100 1200 750]);
@@ -366,21 +381,21 @@ xlim([0 360])
 grid on
 xlabel("$\theta_{E,0}$ [deg]", 'Interpreter', 'latex')
 ylabel("TOF [yrs]", 'Interpreter', 'latex')
-title("MMAT Family Tradespace", 'Interpreter', 'latex')
+% title("MMAT Family Tradespace", 'Interpreter', 'latex')
 colormap(viridis)
 cb5 = colorbar;
 caxis([4 8])
 ylabel(cb5, "$\Delta v$ [km/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 cb5.Label.Position = cb5.Label.Position+[-2 2.1 0];
-set(gca, 'Color', 'k');
+set(gca, 'Color', 'w');
 view(2)
 hold off
-% exportgraphics(fig5, 'MarsMMATCR3BP_5.png', 'BackgroundColor', 'k')
+% exportgraphics(fig5, 'MarsMMATCR3BP_5.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 fig6 = figure("Position", [200 100 1200 750]);
 hold on
+scatter(wrapTo360((6.253075709008801*180/pi):0.5:((6.253075709008801+2*pi)*180/pi)), wrapTo360((0.027114456425096738*180/pi):(0.5*tstarSE/tstarSM):((0.027114456425096738+2*pi*tstarSE/tstarSM)*180/pi)), 5, 'w', 'filled', 'HandleVisibility', 'off')
 scatter(wrapTo360(theta_E_0s), wrapTo360(theta_M_0s), 20, Deltavs, 'filled', 'HandleVisibility', 'off')
-scatter(wrapTo360((6.253075709008801*180/pi):1:((6.253075709008801+10*pi)*180/pi)), wrapTo360((0.027114456425096738*180/pi):(tstarSE/tstarSM):((0.027114456425096738+10*pi*tstarSE/tstarSM)*180/pi)), 20, 'w', 'HandleVisibility', 'off')
 axis equal
 axis([0 360 0 360])
 grid on
