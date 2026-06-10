@@ -1,28 +1,29 @@
 %%% VenusMMATCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 31 February 2026
-%%% U: 12 May 2026
+%%% U: 10 June 2026
 
 clear
 
-%NEED TO FIX TRANSFER ANGLES
 %% Import Transfer Data
-transferData = load('E:/MMATData/VenusMMATCR3BP_3_1_L2Lyapunov_flipfalse_3_000713_L2Halo_flipfalse.mat');
+transferData = load('E:/MMATData/VenusMMATCR3BP_3_13_L2Halo_flipfalse_3_000713_L2Halo_flipfalse.mat');
 transfers = cellfun(@(n) transferData.(n), fieldnames(transferData));
 n_transfers = length(transfers);
 disp("Total transfers: "+n_transfers)
 TOFs = zeros(n_transfers,1);
-Deltav_1s = zeros(n_transfers,1);
-Deltav_2s = zeros(n_transfers,1);
-theta_E_deps = zeros(n_transfers,1);
-theta_E_0s = zeros(n_transfers,1); %% Fix?
-for j = 1:length(transfers)
+Deltav_1s = zeros(n_transfers, 1);
+Deltav_2s = zeros(n_transfers, 1);
+theta_E_0s = zeros(n_transfers, 1);
+theta_V_0s = zeros(n_transfers, 1);
+r_p_deps = zeros(n_transfers, 1);
+parfor j = 1:n_transfers
     currentTransfer = transfers(j);
     TOFs(j) = currentTransfer.TOF;
     Deltav_1s(j) = currentTransfer.Deltav_1;
     Deltav_2s(j) = currentTransfer.Deltav_2;
-    theta_E_deps(j) = wrapTo360(atan2d(currentTransfer.departureConic.state(2), currentTransfer.departureConic.state(1)));
-    theta_E_0s(j) = transfers(j).theta_dep_0*180/pi; %% Fix?
+    theta_E_0s(j) = currentTransfer.theta_dep_0*180/pi;
+    theta_V_0s(j) = currentTransfer.theta_arr_0*180/pi;
+    r_p_deps(j) = currentTransfer.departureConic.a*(1-currentTransfer.departureConic.e);
 end
 Deltavs = Deltav_1s+Deltav_2s;
 [~, sortDeltavs]= sort(Deltavs);
@@ -186,133 +187,195 @@ a45SV = 0.5-muSV;
 b4SV = sqrt(3)/2;
 b5SV = -b4SV;
 
+%% Propagators
+odeCS = @(t,r) ODE_C(t, r, gmS);
+odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
+odeCR3BPSE = @(t,r) ODE_CR3BP(t, r, muSE);
+odeCR3BPSV = @(t,r) ODE_CR3BP(t, r, muSV);
+odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
+
 %% Design Variables
 RSoIm = lstarSE*(mm/mS)^(2/5); % Moon sphere of influence radius [km]
 RSoIE = 0.09877*lstarSE; % Earth sphere of influence radius [km]
 RSoIV = 0.1107*lstarSV; % Venus sphere of influence radius [km]
 
-%% Frame Transformations
+%% Transfer Angles
+gamma_0s = zeros(n_transfers,1);
+gamma_deps = zeros(n_transfers,1);
+phi_totals = zeros(n_transfers,1); 
+phi_deps = zeros(n_transfers,1);
+phi_bridges = zeros(n_transfers,1);
+phi_arrs = zeros(n_transfers,1);
+parfor j = 1:n_transfers
+    currentTransfer = transfers(j);
+    t_EM_0 = currentTransfer.t_0/tstarEM+currentTransfer.departureManifoldArc1.t(1);
+    q_EM_0 = [currentTransfer.departureManifoldArc1.x(1), currentTransfer.departureManifoldArc1.y(1), currentTransfer.departureManifoldArc1.z(1), currentTransfer.departureManifoldArc1.xdot(1), currentTransfer.departureManifoldArc1.ydot(1), currentTransfer.departureManifoldArc1.zdot(1)];
+    q_EI_EM_0 = rotToP1EclipJ2000(muEM, currentTransfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, t_EM_0, q_EM_0);
+    q_EI_SE_0 = [q_EI_EM_0(:,1:3)*lstarEM/lstarSE, q_EI_EM_0(:,4:6)*lstarEM*tstarSE/lstarSE/tstarEM];
+    t_EM_SE_0 = t_EM_0*tstarEM/tstarSE;
+    q_EM_SE_0 = P2EclipJ2000ToRot(muSE, currentTransfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, t_EM_SE_0, q_EI_SE_0);
+    q_EM_SI_0 = planetRotToSunEclipJ2000(muSE, currentTransfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_EM_SE_0, q_EM_SE_0);
+    gamma_0s(j) = wrapTo360(atan2d(q_EM_SI_0(1,2), q_EM_SI_0(1,1)));
+    t_SV_0 = currentTransfer.theta_arr_f+currentTransfer.arrivalManifoldArc.t(1);
+    q_SV_0 = [currentTransfer.arrivalManifoldArc.x(1), currentTransfer.arrivalManifoldArc.y(1), currentTransfer.arrivalManifoldArc.z(1), currentTransfer.arrivalManifoldArc.xdot(1), currentTransfer.arrivalManifoldArc.ydot(1), currentTransfer.arrivalManifoldArc.zdot(1)];
+    q_SV_SI_0 = planetRotToSunEclipJ2000(muSV, currentTransfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_SV_0, q_SV_0);
+    gamma_f = wrapTo360(atan2d(q_SV_SI_0(1,2), q_SV_SI_0(1,1)));
+    phi_totals(j) = wrapTo360(gamma_f-gamma_0s(j));
+    gamma_deps(j) = wrapTo360(atan2d(currentTransfer.departureConic.state(2), currentTransfer.departureConic.state(1)));
+    gamma_bridge = wrapTo360(atan2d(currentTransfer.bridgeConic.state(2), currentTransfer.bridgeConic.state(1)));
+    gamma_arr = wrapTo360(atan2d(currentTransfer.arrivalConic.state(2), currentTransfer.arrivalConic.state(1)));
+    t_ac_full = currentTransfer.t_0+currentTransfer.departureManifoldArc1.TOF*tstarEM+currentTransfer.departureManifoldArc2.TOF*tstarSE+currentTransfer.departureConic.TOF+currentTransfer.bridgeConic.TOF+[0, currentTransfer.arrivalConic.TOF];
+    Q_ac_0 = currentTransfer.arrivalConic.state;
+    ac_sol = ode89(odeCS, t_ac_full, Q_ac_0, odeOpts);
+    gamma_end = wrapTo360(atan2d(ac_sol.y(2,end), ac_sol.y(1,end)));
+    phi_deps(j) = wrapTo360(gamma_bridge-gamma_deps(j));
+    phi_bridges(j) = wrapTo360(gamma_arr-gamma_bridge);
+    phi_arrs(j) = wrapTo360(gamma_end-gamma_arr);
+end
+phi_conics = phi_deps+phi_bridges+phi_arrs;
+
+%% Interpolated Frame Transformations
 e_dep_trans = transfer.t_0+transfer.departureManifoldArc1.TOF*tstarEM;
 e_dep_SoI = e_dep_trans+transfer.departureManifoldArc2.TOF*tstarSE;
 e_bridge = e_dep_SoI+transfer.departureConic.TOF;
 e_arr_int = e_bridge+transfer.bridgeConic.TOF;
 
-theta_rot = deg2rad(theta_E_deps(transferIdx));
+t_EM = transfer.t_0/tstarEM+transfer.departureManifoldArc1.t;
+t_SE = e_dep_trans/tstarSE+transfer.departureManifoldArc2.t;
+tspan_dep = e_dep_SoI+[0, transfer.departureConic.TOF];
+tspan_bridge = e_bridge+[0, transfer.bridgeConic.TOF];
+tspan_arr = e_arr_int+[0, transfer.arrivalConic.TOF];
+t_SV = transfer.theta_arr_f+transfer.arrivalManifoldArc.t; % Because Venus is not yet realistically phased
+
+t_interp = [t_EM(1)*tstarEM:(0.5*24*3600):(tspan_arr(end)-transfer.arrivalManifoldArc.TOF*tstarSV), tspan_arr(end)-transfer.arrivalManifoldArc.TOF*tstarSV];
+t_dmEM_EM = [t_interp(t_interp < t_EM(end)*tstarEM)./tstarEM, t_EM(end)];
+t_dmSE_SE = [t_SE(1), t_interp((t_interp > t_SE(1)*tstarSE) & (t_interp < t_SE(end)*tstarSE))./tstarSE, t_SE(end)];
+t_dc_S = [tspan_dep(1), t_interp((t_interp > tspan_dep(1)) & (t_interp < tspan_dep(end))), tspan_dep(end)];
+t_bc_S = [tspan_bridge(1), t_interp((t_interp > tspan_bridge(1)) & (t_interp < tspan_bridge(end))), tspan_bridge(end)];
+t_ac_S = [tspan_arr(1), t_interp((t_interp > tspan_arr(1)) & (t_interp < tspan_arr(end))), tspan_arr(end)];
+t_am_SV = [tspan_arr(end)/tstarSV, t_interp((t_interp > tspan_arr(end)) & (t_interp < t_interp(end)))./tstarSV, t_interp(end)/tstarSV];
+t_all = [t_dmEM_EM*tstarEM, t_dmSE_SE*tstarSE, t_dc_S, t_bc_S, t_ac_S, t_am_SV*tstarSV];
+
+t_dmEM_SE = t_dmEM_EM.*tstarEM./tstarSE;
+t_SV_deval = ([t_dmEM_SE, t_dmSE_SE, t_dc_S./tstarSE, t_bc_S./tstarSE, t_ac_S./tstarSE, t_am_SV.*tstarSV./tstarSE]-t_dmEM_SE(1)).*tstarSE./tstarSV+transfer.theta_arr_0;
+
+theta_rot = deg2rad(gamma_deps(transferIdx));
 R = [cos(theta_rot), sin(theta_rot) 0; -sin(theta_rot), cos(theta_rot) 0; 0 0 1];
 
-t_EM = transfer.t_0/tstarEM+transfer.departureManifoldArc1.t;
-q_EM = [transfer.departureManifoldArc1.x, transfer.departureManifoldArc1.y, transfer.departureManifoldArc1.z, transfer.departureManifoldArc1.xdot, transfer.departureManifoldArc1.ydot, transfer.departureManifoldArc1.zdot];
-q_EI_EM = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, t_EM, q_EM);
-q_EI_SE = [q_EI_EM(:,1:3).*lstarEM./lstarSE, q_EI_EM(:,4:6).*lstarEM.*tstarSE./lstarSE./tstarEM];
-t_EM_SE = t_EM.*tstarEM./tstarSE;
-q_EM_SE = P2EclipJ2000ToRot(muSE, transfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, t_EM_SE, q_EI_SE);
-q_EM_SI = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_EM_SE, q_EM_SE);
-Q_EM_SI = [q_EM_SI(:,1:3).*lstarSE, q_EM_SI(:,4:6).*lstarSE./tstarSE];
-r_EM_SI_R = (R*Q_EM_SI(:,1:3)')';
+IC_dmEM_EM = [transfer.departureManifoldArc1.x(1), transfer.departureManifoldArc1.y(1), transfer.departureManifoldArc1.z(1), transfer.departureManifoldArc1.xdot(1), transfer.departureManifoldArc1.ydot(1), transfer.departureManifoldArc1.zdot(1)];
+sol_dmEM_EM = ode89(odeCR3BPEM, [t_EM(1) t_EM(end)], IC_dmEM_EM, odeOpts);
+q_dmEM_EM = deval(sol_dmEM_EM, t_dmEM_EM)';
+q_dmEM_EI = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, t_dmEM_EM, q_dmEM_EM);
+Q_dmEM_EI = [q_dmEM_EI(:,1:3).*lstarEM./lstarSE, q_dmEM_EI(:,4:6).*lstarEM.*tstarSE./lstarSE./tstarEM];
+q_dmEM_SE = P2EclipJ2000ToRot(muSE, transfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, t_dmEM_SE, Q_dmEM_EI);
+q_dmEM_S = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_dmEM_SE, q_dmEM_SE);
+Q_dmEM_S = [q_dmEM_S(:,1:3).*lstarSE, q_dmEM_S(:,4:6).*lstarSE./tstarSE];
+Q_dmEM_S_R = (R*Q_dmEM_S(:,1:3)')';
 
-t_SE = e_dep_trans/tstarSE+transfer.departureManifoldArc2.t;
-q_SE = [transfer.departureManifoldArc2.x, transfer.departureManifoldArc2.y, transfer.departureManifoldArc2.z, transfer.departureManifoldArc2.xdot, transfer.departureManifoldArc2.ydot, transfer.departureManifoldArc2.zdot];
-q_SE_SI = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_SE, q_SE);
-Q_SE_SI = [q_SE_SI(:,1:3).*lstarSE, q_SE_SI(:,4:6).*lstarSE./tstarSE];
-r_SE_SI_R = (R*Q_SE_SI(:,1:3)')';
+IC_dmSE_SE = [transfer.departureManifoldArc2.x(1), transfer.departureManifoldArc2.y(1), transfer.departureManifoldArc2.z(1), transfer.departureManifoldArc2.xdot(1), transfer.departureManifoldArc2.ydot(1), transfer.departureManifoldArc2.zdot(1)];
+sol_dmSE_SE = ode89(odeCR3BPSE, [t_SE(1) t_SE(end)], IC_dmSE_SE, odeOpts);
+q_dmSE_SE = deval(sol_dmSE_SE, t_dmSE_SE)';
+q_dmSE_S = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_dmSE_SE, q_dmSE_SE);
+Q_dmSE_S = [q_dmSE_S(:,1:3).*lstarSE, q_dmSE_S(:,4:6).*lstarSE./tstarSE];
+Q_dmSE_S_R = (R*Q_dmSE_S(:,1:3)')';
 
-ode = @(t,r) ODE_C(t, r, gmS);
-odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
-tspan_dep = e_dep_SoI+[0:(3600*24):transfer.departureConic.TOF, transfer.departureConic.TOF];
 IC_dep = transfer.departureConic.state;
-dep_sol = ode89(ode, tspan_dep, IC_dep, odeOpts);
-r_dep_R = R*dep_sol.y(1:3,:);
+dep_sol = ode89(odeCS, tspan_dep, IC_dep, odeOpts);
+Q_dc_S = deval(dep_sol, t_dc_S)';
+Q_dc_S_R = (R*Q_dc_S(:,1:3)')';
 
-tspan_bridge = e_bridge+[0:(3600*24):transfer.bridgeConic.TOF, transfer.bridgeConic.TOF];
 IC_bridge = transfer.bridgeConic.state;
-bridge_sol = ode89(ode, tspan_bridge, IC_bridge, odeOpts);
-r_bridge_R = R*bridge_sol.y(1:3,:);
+bridge_sol = ode89(odeCS, tspan_bridge, IC_bridge, odeOpts);
+Q_bc_S = deval(bridge_sol, t_bc_S)';
+Q_bc_S_R = (R*Q_bc_S(:,1:3)')';
 
-tspan_arr = e_arr_int+[0:(3600*24):transfer.arrivalConic.TOF, transfer.arrivalConic.TOF];
 IC_arr = transfer.arrivalConic.state;
-arr_sol = ode89(ode, tspan_arr, IC_arr, odeOpts);
-r_arr_R = R*arr_sol.y(1:3,:);
+arr_sol = ode89(odeCS, tspan_arr, IC_arr, odeOpts);
+Q_ac_S = deval(arr_sol, t_ac_S)';
+Q_ac_S_R = (R*Q_ac_S(:,1:3)')';
 
-t_SV = transfer.theta_arr_f+transfer.arrivalManifoldArc.t; % Because Venus is not yet realistically phased
-q_SV = [transfer.arrivalManifoldArc.x, transfer.arrivalManifoldArc.y, transfer.arrivalManifoldArc.z, transfer.arrivalManifoldArc.xdot, transfer.arrivalManifoldArc.ydot, transfer.arrivalManifoldArc.zdot];
-q_SV_SI = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_SV, q_SV);
-Q_SV_SI = [q_SV_SI(:,1:3).*lstarSV, q_SV_SI(:,4:6).*lstarSV./tstarSV];
-r_SV_SI_R = (R*Q_SV_SI(:,1:3)')';
+IC_am_SV = [transfer.arrivalManifoldArc.x(1), transfer.arrivalManifoldArc.y(1), transfer.arrivalManifoldArc.z(1), transfer.arrivalManifoldArc.xdot(1), transfer.arrivalManifoldArc.ydot(1), transfer.arrivalManifoldArc.zdot(1)];
+sol_am_SV = ode89(odeCR3BPSV, [t_am_SV(end) t_am_SV(1)], IC_am_SV, odeOpts);
+q_am_SV = deval(sol_am_SV, t_am_SV)';
+q_am_S = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_am_SV-t_am_SV(1)+t_SV(end), q_am_SV);
+Q_am_S = [q_am_S(:,1:3).*lstarSV, q_am_S(:,4:6).*lstarSV./tstarSV];
+Q_am_S_R = (R*Q_am_S(:,1:3)')';
 
-t_m_EM = linspace(transfer.t_0/tstarEM, e_dep_SoI/tstarEM, 10001);
-q_m_EI_EM = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, t_m_EM, ones(10001, 1)*[1-muEM, 0, 0, 0, 0, 0]);
-q_m_EI_SE = [q_m_EI_EM(:,1:3).*lstarEM./lstarSE, q_m_EI_EM(:,4:6).*lstarEM.*tstarSE./lstarSE./tstarEM];
-t_m_SE = t_m_EM.*tstarEM./tstarSE;
-q_m_SE = P2EclipJ2000ToRot(muSE, transfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, t_m_SE, q_m_EI_SE);
+Moon_EI = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, [t_dmEM_EM, t_dmSE_SE.*tstarSE./tstarEM], ones(length(t_dmEM_EM)+length(t_dmSE_SE), 1)*[1-muEM, 0, 0, 0, 0, 0]);
+MOON_EI = [Moon_EI(:,1:3).*lstarEM./lstarSE, Moon_EI(:,4:6).*lstarEM.*tstarSE./lstarSE./tstarEM];
+Moon_SE = P2EclipJ2000ToRot(muSE, transfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, [t_dmEM_SE, t_dmSE_SE], MOON_EI);
 
-t_E_SE = linspace(transfer.t_0/tstarSE, transfer.t_0/tstarSE+2*pi, 10001);
-q_E_SI = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_E_SE, ones(10001, 1)*[1-muSE, 0, 0, 0, 0, 0]);
-Q_E_SI = [q_E_SI(:,1:3).*lstarSE, q_E_SI(:,4:6).*lstarSE./tstarSE];
+Earth_S = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, [t_dmEM_SE, t_dmSE_SE, t_dc_S./tstarSE, t_bc_S./tstarSE, t_ac_S./tstarSE, t_am_SV.*tstarSV./tstarSE], ones(length(t_dmEM_SE)+length(t_dmSE_SE)+length(t_dc_S)+length(t_bc_S)+length(t_ac_S)+length(t_am_SV), 1)*[1-muSE, 0, 0, 0, 0, 0]);
+EARTH_S = [Earth_S(:,1:3).*lstarSE, Earth_S(:,4:6).*lstarSE./tstarSE];
+Earth_idx = oneRevolution(EARTH_S);
 
-t_V_SV = linspace(transfer.theta_arr_f-2*pi, transfer.theta_arr_f, 10001);
-q_V_SI = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_V_SV, ones(10001, 1)*[1-muSV, 0, 0, 0, 0, 0]);
-Q_V_SI = [q_V_SI(:,1:3).*lstarSV, q_V_SI(:,4:6).*lstarSV./tstarSV];
+Venus_S = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_SV_deval, ones(length(t_SV_deval), 1)*[1-muSV, 0, 0, 0, 0, 0]);
+VENUS_S = [Venus_S(:,1:3).*lstarSV, Venus_S(:,4:6).*lstarSV./tstarSV];
+Venus_idx = oneRevolution(VENUS_S);
 
 %% Earth-Moon Trajectory Plot
 % fig1 = figure("Position", [200 100 1200 750]);
 % hold on
-% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-% set(Earth, 'DisplayName', "Earth")
-% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% % Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0].*lstarEM./lstarSE);
+% % set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM.*lstarEM./lstarSE, [1-muEM, 0, 0].*lstarEM./lstarSE);
 % set(Moon, 'DisplayName', "Moon")
-% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
-% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
-% p11 = plot3WithArrows(transfer.departureOrbit.x, transfer.departureOrbit.y, transfer.departureOrbit.z, 'g--', 'NumArrows', 2, 'ArrowScale', 2);
+% scatter3(a1EM.*lstarEM./lstarSE, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+% scatter3(a2EM.*lstarEM./lstarSE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% p11 = plot3WithArrows(transfer.departureOrbit.x.*lstarEM./lstarSE, transfer.departureOrbit.y.*lstarEM./lstarSE, transfer.departureOrbit.z.*lstarEM./lstarSE, '--', 'Color', [0.5 0.5 0], 'NumArrows', 3, 'ArrowScale', 1.5);
 % set(p11, 'DisplayName', "Dep. Orbit")
-% p12 = plot3WithArrows(transfer.departureManifoldArc1.x, transfer.departureManifoldArc1.y, transfer.departureManifoldArc1.z, 'r');
+% p12 = plot3WithArrows(q_dmEM_EM(:,1).*lstarEM./lstarSE, q_dmEM_EM(:,2).*lstarEM./lstarSE, q_dmEM_EM(:,3).*lstarEM./lstarSE, 'r');
 % set(p12, 'DisplayName', "Dep. CR3BP Arc")
-% plot3(1-muEM+RSoIm/lstarEM*cos(linspace(0, 2*pi, 101)), RSoIm/lstarEM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Moon SoI Radius")
+% % plot3(1-muEM+RSoIm/lstarEM*cos(linspace(0, 2*pi, 101)), RSoIm/lstarEM*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Moon SoI Radius")
 % axis equal
 % grid on
-% xlabel("$x$ [EM ndim]", 'Interpreter', 'latex')
-% ylabel("$y$ [EM ndim]", 'Interpreter', 'latex')
-% zlabel("$z$ [EM ndim]", 'Interpreter', 'latex')
+% xlabel("$x$ [AU]", 'Interpreter', 'latex')
+% ylabel("$y$ [AU]", 'Interpreter', 'latex')
+% zlabel("$z$ [AU]", 'Interpreter', 'latex')
 % title("Earth-Moon Rot.", 'Interpreter', 'latex')
 % leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% % drawnow;
-% % set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% drawnow;
+% set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
 % set(gca, 'Color', 'k');
 % view(3)
 % hold off
-% % ax = gca;
-% % ax.SortMethod = 'childorder';
-% % exportgraphics(fig1, 'VenusMMATCR3BP_1.png', 'BackgroundColor', 'k')
+% ax1 = gca;
+% ax1.SortMethod = 'childorder';
+% % exportgraphics(fig1, 'VenusMMATCR3BP_1.png','BackgroundColor', 'k')
 % % exportgraphics(fig1, 'VenusMMATCR3BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Sun-Earth Trajectory Plot
+cutoff_SE = 50;
+
 % fig2 = figure("Position", [200 100 1200 750]);
 % hold on
 % Earth = plot3DBody("Earth", 10*RE/lstarSE, [1-muSE, 0, 0]);
-% set(Earth, 'DisplayName', "Earth (x10)")
-% p21 = plot3WithArrows(q_m_SE(:,1), q_m_SE(:,2), q_m_SE(:,3), 'w--');
-% set(p21, 'DisplayName', "Moon Traj")
+% set(Earth, 'DisplayName', "Earth")
+% p21 = plot3WithArrows(Moon_SE(:,1), Moon_SE(:,2), Moon_SE(:,3), 'w--', 'NumArrows', 1, 'ArrowScale', 7);
+% set(p21, 'DisplayName', "Moon Traj.")
 % scatter3(a1SE, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SE $L_{1}$")
 % % scatter3(a2SE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SE $L_{2}$")
-% p22 = plot3WithArrows(q_EM_SE(:,1), q_EM_SE(:,2), q_EM_SE(:,3), 'r', 'NumArrows', 2, 'ArrowScale', 2);
+% p22 = plot3WithArrows(q_dmEM_SE(:,1), q_dmEM_SE(:,2), q_dmEM_SE(:,3), 'r', 'NumArrows', 2, 'ArrowScale', 2);
 % set(p22, 'DisplayName', "Dep. CR3BP Arc")
-% p23 = plot3WithArrows(transfer.departureManifoldArc2.x(1:end-7), transfer.departureManifoldArc2.y(1:end-7), transfer.departureManifoldArc2.z(1:end-7), 'r', 'ArrowScale', 0.5);
+% p23 = plot3WithArrows(q_dmSE_SE(1:end-cutoff_SE,1), q_dmSE_SE(1:end-cutoff_SE,2), q_dmSE_SE(1:end-cutoff_SE,3), 'r');
 % set(p23, 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
 % % plot3(1-muSE+RSoIE/lstarSE*cos(linspace(0, 2*pi, 101)), RSoIE/lstarSE*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Earth SoI Radius")
 % axis equal
+% ax2 = gca;
+% ax2.ZTick = 0;
 % grid on
-% xlabel("$x$ [SE ndim]", 'Interpreter', 'latex')
-% ylabel("$y$ [SE ndim]", 'Interpreter', 'latex')
-% hz2 = zlabel("$z$ [SE ndim]", 'Interpreter', 'latex');
-% shiftZLabel(gca, hz2)
+% xlabel("$x$ [AU]", 'Interpreter', 'latex')
+% ylabel("$y$ [AU]", 'Interpreter', 'latex')
+% hz2 = zlabel("$z$ [AU]", 'Interpreter', 'latex');
+% shiftZLabel(gca, hz2, 0.1)
 % title("Sun-Earth Rot.", 'Interpreter', 'latex')
 % leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% % drawnow;
-% % set(leg2.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% drawnow;
+% set(leg2.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
 % set(gca, 'Color', 'k');
 % view(3)
 % hold off
-% % ax = gca;
-% % ax.SortMethod = 'childorder';
+% ax2.SortMethod = 'childorder';
 % % exportgraphics(fig2, 'VenusMMATCR3BP_2.png', 'BackgroundColor', 'k')
 % % exportgraphics(fig2, 'VenusMMATCR3BP_2.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
@@ -321,120 +384,123 @@ disp("TOF: "+transfer.TOF/24/3600/365.25+" yrs")
 
 % fig3 = figure("Position", [200 100 1200 750]);
 % hold on
-% Sun = plot3DBody("Sun", 10*RS, [0, 0, 0]);
-% set(Sun, 'DisplayName', "Sun (x10)")
-% p31 = plot3WithArrows(Q_E_SI(:,1), Q_E_SI(:,2), Q_E_SI(:,3), 'g--', 'NumArrows', 2, 'ArrowScale', 0.75);
+% Sun = plot3DBody("Sun", 10*RS./lstarSE, [0, 0, 0]);
+% set(Sun, 'DisplayName', "Sun")
+% p31 = plot3WithArrows(EARTH_S(1:Earth_idx,1)./lstarSE, EARTH_S(1:Earth_idx,2)./lstarSE, EARTH_S(1:Earth_idx,3)./lstarSE, 'g:', 'NumArrows', 3);
 % set(p31, 'DisplayName', "Earth Orbit")
-% p32 = plot3WithArrows(Q_V_SI(:,1), Q_V_SI(:,2), Q_V_SI(:,3), '--', 'Color', [1 0.5 0], 'NumArrows', 2);
+% p32 = plot3WithArrows(VENUS_S(1:Venus_idx,1)./lstarSE, VENUS_S(1:Venus_idx,2)./lstarSE, VENUS_S(1:Venus_idx,3)./lstarSE, ':', 'Color', [1 0.5 0], 'NumArrows', 3, 'ArrowScale', 1.25);
 % set(p32, 'DisplayName', "Venus Orbit")
-% Earth = plot3DBody("Earth", 1000*RE, Q_E_SI(1,1:3));
-% set(Earth, 'DisplayName', "Earth (x1000) at Dep.")
-% Venus = plot3DBody("Venus", 1000*RV, Q_V_SI(end,1:3));
-% set(Venus, 'DisplayName', "Venus (x1000) at Arr.")
-% p33 = plot3WithArrows(Q_EM_SI(:,1), Q_EM_SI(:,2), Q_EM_SI(:,3), 'r', 'NumArrows', 2);
+% Earth = plot3DBody("Earth", 1000*RE./lstarSE, EARTH_S(1,1:3)./lstarSE);
+% set(Earth, 'DisplayName', "Earth at Dep.")
+% Venus = plot3DBody("Venus", 1000*RV./lstarSE, VENUS_S(end,1:3)./lstarSE);
+% set(Venus, 'DisplayName', "Venus at Arr.")
+% p33 = plot3WithArrows(Q_dmEM_S(:,1)./lstarSE, Q_dmEM_S(:,2)./lstarSE, Q_dmEM_S(:,3)./lstarSE, 'r', 'NumArrows', 1, 'ArrowScale', 9);
 % set(p33, 'DisplayName', "Dep. CR3BP Arc")
-% p34 = plot3WithArrows(Q_SE_SI(:,1), Q_SE_SI(:,2), Q_SE_SI(:,3), 'r');
+% p34 = plot3WithArrows(Q_dmSE_S(:,1)./lstarSE, Q_dmSE_S(:,2)./lstarSE, Q_dmSE_S(:,3)./lstarSE, 'r', 'NumArrows', 2, 'ArrowScale', 1);
 % set(p34, 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
-% p35 = plot3WithArrows(dep_sol.y(1,:), dep_sol.y(2,:), dep_sol.y(3,:), 'm', 'ArrowScale', 0.75);
+% p35 = plot3WithArrows(Q_dc_S(:,1)./lstarSE, Q_dc_S(:,2)./lstarSE, Q_dc_S(:,3)./lstarSE, 'm', 'NumArrows', 5, 'ArrowScale', 1);
 % set(p35, 'DisplayName', "Dep. Conic")
-% p36 = plot3WithArrows(bridge_sol.y(1,:), bridge_sol.y(2,:), bridge_sol.y(3,:), 'Color', [0.5 0 0.5]);
+% p36 = plot3WithArrows(Q_bc_S(:,1)./lstarSE, Q_bc_S(:,2)./lstarSE, Q_bc_S(:,3)./lstarSE, 'Color', [0.5 0 0.5], 'NumArrows', 5, 'ArrowScale', 1.5);
 % set(p36, 'DisplayName', "Bridge Conic")
-% p37 = plot3WithArrows(arr_sol.y(1,:), arr_sol.y(2,:), arr_sol.y(3,:), 'c');
+% p37 = plot3WithArrows(Q_ac_S(:,1)./lstarSE, Q_ac_S(:,2)./lstarSE, Q_ac_S(:,3)./lstarSE, 'c', 'NumArrows', 5, 'ArrowScale', 1.25);
 % set(p37, 'DisplayName', "Arr. Conic")
-% p38 = plot3WithArrows(Q_SV_SI(:,1), Q_SV_SI(:,2), Q_SV_SI(:,3), 'b', 'FlipDir', 'On');
+% p38 = plot3WithArrows(Q_am_S(:,1)./lstarSE, Q_am_S(:,2)./lstarSE, Q_am_S(:,3)./lstarSE, 'b', 'NumArrows', 5, 'ArrowScale', 1.25);
 % set(p38, 'DisplayName', "Arr. CR3BP Arc")
-% scatter3(bridge_sol.y(1,1), bridge_sol.y(2,1), bridge_sol.y(3,1), 75, 'w', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
-% scatter3(bridge_sol.y(1,end), bridge_sol.y(2,end), bridge_sol.y(3,end), 75, 'w', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
+% scatter3(Q_bc_S(1,1)./lstarSE, Q_bc_S(1,2)./lstarSE, Q_bc_S(1,3)./lstarSE, 75, 'w', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
+% scatter3(Q_bc_S(end,1)./lstarSE, Q_bc_S(end,2)./lstarSE, Q_bc_S(end,3)./lstarSE, 75, 'w', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
 % axis equal
+% ax3 = gca;
+% ax3.ZTick = 0;
 % grid on
-% xlabel("$X$ [km]", 'Interpreter', 'latex')
-% ylabel("$Y$ [km]", 'Interpreter', 'latex')
-% hz3 = zlabel("$Z$ [km]", 'Interpreter', 'latex');
-% shiftZLabel(gca, hz3)
+% xlabel("$X$ [AU]", 'Interpreter', 'latex')
+% ylabel("$Y$ [AU]", 'Interpreter', 'latex')
+% hz3 = zlabel("$Z$ [AU]", 'Interpreter', 'latex');
+% shiftZLabel(gca, hz3, 0.1)
 % title("Sun-Centered Ecliptic J2000 $|$ TOF = "+num2str(transfer.TOF/24/3600/365.25, 3)+" yrs", 'Interpreter', 'latex')
 % leg3 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% % drawnow;
-% % set(leg3.EntryContainer.NodeChildren(end-3).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% drawnow;
+% set(leg3.EntryContainer.NodeChildren(end-3).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
 % set(gca, 'Color', 'k');
 % view(3)
 % hold off
-% % ax = gca;
-% % ax.SortMethod = 'childorder';
+% ax3.SortMethod = 'childorder';
 % % exportgraphics(fig3, 'VenusMMATCR3BP_3.png', 'BackgroundColor', 'k')
 % % exportgraphics(fig3, 'VenusMMATCR3BP_3.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 % fig3 = figure("Position", [200 100 1200 750]);
 % hold on
-% Sun = plot3DBody("Sun", 10*RS, [0, 0, 0]);
-% set(Sun, 'DisplayName', "Sun (x10)")
-% p31 = plot3WithArrows(Q_E_SI(:,1), Q_E_SI(:,2), Q_E_SI(:,3), 'g--', 'NumArrows', 2, 'ArrowScale', 0.75);
+% Sun = plot3DBody("Sun", 10*RS./lstarSE, [0, 0, 0]);
+% set(Sun, 'DisplayName', "Sun")
+% p31 = plot3WithArrows(EARTH_S(1:Earth_idx,1)./lstarSE, EARTH_S(1:Earth_idx,2)./lstarSE, EARTH_S(1:Earth_idx,3)./lstarSE, 'g:', 'NumArrows', 3);
 % set(p31, 'DisplayName', "Earth Orbit")
-% p32 = plot3WithArrows(Q_V_SI(:,1), Q_V_SI(:,2), Q_V_SI(:,3), '--', 'Color', [1 0.5 0], 'NumArrows', 2);
+% p32 = plot3WithArrows(VENUS_S(1:Venus_idx,1)./lstarSE, VENUS_S(1:Venus_idx,2)./lstarSE, VENUS_S(1:Venus_idx,3)./lstarSE, ':', 'Color', [1 0.5 0], 'NumArrows', 3, 'ArrowScale', 1.25);
 % set(p32, 'DisplayName', "Venus Orbit")
-% Earth = plot3DBody("Earth", 1000*RE, [lstarSE, 0, 0]);
-% set(Earth, 'DisplayName', "Earth (x1000) at Dep. Conic")
-% Venus = plot3DBody("Venus", 1000*RV, (R*Q_V_SI(end,1:3)')');
-% set(Venus, 'DisplayName', "Venus (x1000) at Arr.")
-% p33 = plot3WithArrows(r_EM_SI_R(:,1), r_EM_SI_R(:,2), r_EM_SI_R(:,3), 'r', 'NumArrows', 2);
+% Earth = plot3DBody("Earth", 1000*RE./lstarSE, (R*EARTH_S(1,1:3)')'./lstarSE);
+% set(Earth, 'DisplayName', "Earth at Dep.")
+% Venus = plot3DBody("Venus", 1000*RV./lstarSE, (R*VENUS_S(end,1:3)')'./lstarSE);
+% set(Venus, 'DisplayName', "Venus at Arr.")
+% p33 = plot3WithArrows(Q_dmEM_S_R(:,1)./lstarSE, Q_dmEM_S_R(:,2)./lstarSE, Q_dmEM_S_R(:,3)./lstarSE, 'r', 'NumArrows', 1, 'ArrowScale', 9);
 % set(p33, 'DisplayName', "Dep. CR3BP Arc")
-% p34 = plot3WithArrows(r_SE_SI_R(:,1), r_SE_SI_R(:,2), r_SE_SI_R(:,3), 'r');
+% p34 = plot3WithArrows(Q_dmSE_S_R(:,1)./lstarSE, Q_dmSE_S_R(:,2)./lstarSE, Q_dmSE_S_R(:,3)./lstarSE, 'r', 'NumArrows', 2, 'ArrowScale', 1);
 % set(p34, 'DisplayName', "Dep. CR3BP Arc", 'HandleVisibility', 'off')
-% p35 = plot3WithArrows(r_dep_R(1,:), r_dep_R(2,:), r_dep_R(3,:), 'm', 'ArrowScale', 0.75);
+% p35 = plot3WithArrows(Q_dc_S_R(:,1)./lstarSE, Q_dc_S_R(:,2)./lstarSE, Q_dc_S_R(:,3)./lstarSE, 'm', 'NumArrows', 5, 'ArrowScale', 1);
 % set(p35, 'DisplayName', "Dep. Conic")
-% p36 = plot3WithArrows(r_bridge_R(1,:), r_bridge_R(2,:), r_bridge_R, 'Color', [0.5 0 0.5]);
+% p36 = plot3WithArrows(Q_bc_S_R(:,1)./lstarSE, Q_bc_S_R(:,2)./lstarSE, Q_bc_S_R(:,3)./lstarSE, 'Color', [0.5 0 0.5], 'NumArrows', 5, 'ArrowScale', 1.5);
 % set(p36, 'DisplayName', "Bridge Conic")
-% p37 = plot3WithArrows(r_arr_R(1,:), r_arr_R(2,:), r_arr_R(3,:), 'c');
+% p37 = plot3WithArrows(Q_ac_S_R(:,1)./lstarSE, Q_ac_S_R(:,2)./lstarSE, Q_ac_S_R(:,3)./lstarSE, 'c', 'NumArrows', 5, 'ArrowScale', 1.25);
 % set(p37, 'DisplayName', "Arr. Conic")
-% p38 = plot3WithArrows(r_SV_SI_R(:,1), r_SV_SI_R(:,2), r_SV_SI_R(:,3), 'b', 'FlipDir', 'On');
+% p38 = plot3WithArrows(Q_am_S_R(:,1)./lstarSE, Q_am_S_R(:,2)./lstarSE, Q_am_S_R(:,3)./lstarSE, 'b', 'NumArrows', 5, 'ArrowScale', 1.25);
 % set(p38, 'DisplayName', "Arr. CR3BP Arc")
-% scatter3(r_bridge_R(1,1), r_bridge_R(2,1), r_bridge_R(3,1), 75, 'w', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
-% scatter3(r_bridge_R(1,end), r_bridge_R(2,end), r_bridge_R(3,end), 75, 'w', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
+% scatter3(Q_bc_S_R(1,1)./lstarSE, Q_bc_S_R(1,2)./lstarSE, Q_bc_S_R(1,3)./lstarSE, 75, 'w', 'filled', 's', 'DisplayName', "$\Delta v_{1}="+num2str(transfer.Deltav_1)+"$ km/s")
+% scatter3(Q_bc_S_R(end,1)./lstarSE, Q_bc_S_R(end,2)./lstarSE, Q_bc_S_R(end,3)./lstarSE, 75, 'w', 'filled', '^', 'DisplayName', "$\Delta v_{2}="+num2str(transfer.Deltav_2)+"$ km/s")
 % axis equal
 % grid on
-% xlabel("$X$ [km]", 'Interpreter', 'latex')
-% ylabel("$Y$ [km]", 'Interpreter', 'latex')
-% % title("Sun-Centered Ecliptic J2000 $|$ TOF = "+num2str(transfer.TOF/24/3600/365.25, 3)+" yrs", 'Interpreter', 'latex')
+% xlabel("$X$ [AU]", 'Interpreter', 'latex')
+% ylabel("$Y$ [AU]", 'Interpreter', 'latex')
+% title("Sun-Centered Ecliptic J2000 (Rotated) $|$ TOF = "+num2str(transfer.TOF/24/3600/365.25, 3)+" yrs", 'Interpreter', 'latex')
 % leg3 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% % drawnow;
-% % set(leg3.EntryContainer.NodeChildren(end-3).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% drawnow;
+% set(leg3.EntryContainer.NodeChildren(end-3).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
 % set(gca, 'Color', 'k');
 % view(2)
 % hold off
-% % ax = gca;
-% % ax.SortMethod = 'childorder';
+% ax = gca;
+% ax.SortMethod = 'childorder';
 % % exportgraphics(fig3, 'VenusMMATCR3BP_3.png', 'BackgroundColor', 'k')
 
 %% Sun-Venus Trajectory Plot
+cutoff_SV = 50;
+
 % fig4 = figure("Position", [200 100 1200 750]);
 % hold on
-% Venus = plot3DBody("Venus", 10*RV/lstarSV, [1-muSV, 0, 0]);
-% set(Venus, 'DisplayName', "Venus (x10)")
-% % scatter3(a1SV, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SV $L_{1}$")
-% scatter3(a2SV, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SV $L_{2}$")
-% p41 = plot3WithArrows(transfer.arrivalOrbit.x, transfer.arrivalOrbit.y, transfer.arrivalOrbit.z, 'g--', 'NumArrows', 2, 'ArrowScale', 1.5);
+% Venus = plot3DBody("Venus", 10*RV/lstarSV.*lstarSV./lstarSE, [1-muSV, 0, 0].*lstarSV./lstarSE);
+% set(Venus, 'DisplayName', "Venus")
+% % scatter3(a1SV.*lstarSV./lstarSE, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "SV $L_{1}$")
+% scatter3(a2SV.*lstarSV./lstarSE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "SV $L_{2}$")
+% p41 = plot3WithArrows(transfer.arrivalOrbit.x.*lstarSV./lstarSE, transfer.arrivalOrbit.y.*lstarSV./lstarSE, transfer.arrivalOrbit.z.*lstarSV./lstarSE, '--', 'Color', [0 0.5 0.5], 'NumArrows', 3, 'ArrowScale', 5);
 % set(p41, 'DisplayName', "Arr. Orbit")
-% p42 = plot3WithArrows(transfer.arrivalManifoldArc.x(1:end-6), transfer.arrivalManifoldArc.y(1:end-6), transfer.arrivalManifoldArc.z(1:end-6), 'b', 'FlipDir', 'On', 'ArrowScale', 0.5);
+% p42 = plot3WithArrows(q_am_SV(cutoff_SV+1:end,1).*lstarSV./lstarSE, q_am_SV(cutoff_SV+1:end,2).*lstarSV./lstarSE, q_am_SV(cutoff_SV+1:end,3).*lstarSV./lstarSE, 'b', 'ArrowScale', 0.75);
 % set(p42, 'DisplayName', "Arr. CR3BP Arc")
-% % plot3(1-muSV+RSoIV/lstarSV*cos(linspace(0, 2*pi, 101)), RSoIV/lstarSV*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'w:', 'DisplayName', "Venus SoI Radius")
+% % plot3(1-muSV+RSoIV/lstarSV*cos(linspace(0, 2*pi, 101)), RSoIV/lstarSV*sin(linspace(0, 2*pi, 101)), zeros(1, 101), 'k:', 'DisplayName', "Venus SoI Radius")
 % axis equal
+% ax4 = gca;
+% ax4.ZTick = 0;
 % grid on
-% xlabel("$x$ [SV ndim]", 'Interpreter', 'latex')
-% ylabel("$y$ [SV ndim]", 'Interpreter', 'latex')
-% hz4 = zlabel("$z$ [SV ndim]", 'Interpreter', 'latex');
-% shiftZLabel(gca, hz4)
+% xlabel("$x$ [AU]", 'Interpreter', 'latex')
+% ylabel("$y$ [AU]", 'Interpreter', 'latex')
+% hz4 = zlabel("$z$ [AU]", 'Interpreter', 'latex');
+% shiftZLabel(gca, hz4, 0.1)
 % title("Sun-Venus Rot.", 'Interpreter', 'latex')
 % leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % set(gca, 'Color', 'k');
 % view(3)
 % hold off
-% % ax = gca;
-% % ax.SortMethod = 'childorder';
+% ax4.SortMethod = 'childorder';
 % % exportgraphics(fig4, 'VenusMMATCR3BP_4.png', 'BackgroundColor', 'k')
 % % exportgraphics(fig4, 'VenusMMATCR3BP_4.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Family Plots
 years = 0; % 2030
-DeltavHohmann = 5.954; % km/s (Venus)
 
 % fig5 = figure("Position", [200 100 1200 750]);
 % hold on
@@ -443,16 +509,15 @@ DeltavHohmann = 5.954; % km/s (Venus)
 % grid on
 % xlabel("$\theta_{E,0}$ [deg]", 'Interpreter', 'latex')
 % ylabel("TOF [yrs]", 'Interpreter', 'latex')
-% % title("MMAT Family Tradespace", 'Interpreter', 'latex')
+% title("MMAT Family Tradespace", 'Interpreter', 'latex')
 % colormap(viridis)
 % cb5 = colorbar;
-% caxis([4 10])
+% clim([3 10])
 % ylabel(cb5, "$\Delta v$ [km/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb5.Label.Position = cb5.Label.Position+[-2 3.1 0];
-% set(gca, 'Color', 'w');
-% view(2)
+% cb5.Label.Position = cb5.Label.Position+[-2 3.2 0];
+% set(gca, 'Color', 'k');
 % hold off
-% exportgraphics(fig5, 'VenusMMATCR3BP_5.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+% % exportgraphics(fig5, 'VenusMMATCR3BP_5.png', 'BackgroundColor', 'k')
 
 % fig6 = figure("Position", [200 100 1200 750]);
 % hold on
@@ -463,16 +528,34 @@ DeltavHohmann = 5.954; % km/s (Venus)
 % grid on
 % xlabel("$\theta_{E,0}$ [deg]", 'Interpreter', 'latex')
 % ylabel("$\theta_{V,0}$ [deg]", 'Interpreter', 'latex')
-% % title("MMAT Family Tradespace", 'Interpreter', 'latex')
+% title("MMAT Family Tradespace", 'Interpreter', 'latex')
 % colormap(viridis)
 % cb6 = colorbar;
-% caxis([4 10])
+% clim([3 10])
 % ylabel(cb6, "$\Delta v$ [km/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb6.Label.Position = cb6.Label.Position+[-2 3.1 0];
+% cb6.Label.Position = cb6.Label.Position+[-2 3.2 0];
 % set(gca, 'Color', 'k');
-% view(2)
 % hold off
 % % exportgraphics(fig6, 'VenusMMATCR3BP_6.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig6, 'VenusMMATCR3BP_6.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+
+%% Delta-v Baselines
+DeltavHohmann = 5.954; % km/s (Venus)
+
+r_p_dep = min(r_p_deps);
+a_arr = transfer.arrivalConic.a;
+e_arr = transfer.arrivalConic.e;
+r_a_arr = a_arr*(1+e_arr);
+
+a_H = (r_p_dep+r_a_arr)/2;
+v1_H = sqrt(gmS*(2/r_p_dep-1/a_H));
+v1_c = sqrt(gmS/r_p_dep);
+Deltav1_H = v1_H-v1_c;
+v2_H = sqrt(gmS*(2/r_a_arr-1/a_H));
+v2_c = sqrt(gmS/r_a_arr);
+Deltav2_H = v2_H-v2_c;
+DeltavMin = abs(Deltav1_H)+abs(Deltav2_H); % km/s (family theoretical minimum)
+disp("Theor. Min. Deltav: "+DeltavMin+" km/s")
 
 %% Comparison Metric
 mask = Deltavs < DeltavHohmann;
@@ -533,10 +616,10 @@ refTOF = 5;
 HV = trapz([TOFFine, refTOF], DeltavHohmann*ones(1,length(DeltavFine)+1)-[DeltavFine, DeltavFine(end)]);
 disp("Hypervolume: "+HV+" yrs*km/s")
 
-plotShift = 0.075;
-DeltavRef = DeltavHohmann*ones(length(TOFFine(25:end))+2,1);
-xFill = [[TOFFine(25); TOFFine(25:end)'; refTOF+plotShift]; flipud([TOFFine(25); TOFFine(25:end)'; refTOF+plotShift])];
-yFill = [DeltavRef; flipud([DeltavHohmann; DeltavFine(25:end)'; DeltavFine(end)])];
+plotShift = 0.05;
+DeltavRef = DeltavHohmann*ones(length(TOFFine)+1,1);
+xFill = [[TOFFine'; refTOF+plotShift]; flipud([TOFFine'; refTOF+plotShift])];
+yFill = [DeltavRef; flipud([DeltavFine'; DeltavFine(end)])];
 
 pointsMask = false(length(TOFsComp),1);
 for j = 1:length(TOFsComp)
@@ -574,31 +657,45 @@ F(mask) = NaN;
 % fig7 = figure("Position", [200 100 1200 750]);
 % hold on
 % scatter(TOFs/24/3600/365.25, Deltavs, 10, 'filled', 'MarkerFaceAlpha', 0.25, 'DisplayName', "Transfers")
-% % scatter(TOFs/24/3600/365.25, Deltavs, 10, angleColor(deg2rad(transferAnglesA)), 'filled', 'HandleVisibility', 'off')
-% % scatter(TOFs/24/3600/365.25, Deltavs, 10, angleColor(deg2rad(transferAnglesB)), 'filled', 'HandleVisibility', 'off')
-% % scatter(TOFs/24/3600/365.25, Deltavs, 10, angleColor(deg2rad(transferAnglesA-transferAnglesB)), 'filled', 'HandleVisibility', 'off')
 % % scatter(TOFs(transferIdx)/24/3600/365.25, Deltavs(transferIdx), 30, 'w', 'filled', 'HandleVisibility', 'off')
-% yline(DeltavHohmann, 'k--', 'DisplayName', "Hohmann Baseline")
-% plot([TOFFine(25), TOFFine(25:end)]-plotShift, [DeltavFine(1), DeltavFine(25:end)], 'Color', [0.75 0 0], 'DisplayName', "Pareto Front")
-% fill(xFill-plotShift, yFill, [1 0 0], 'FaceAlpha', 0.2, 'EdgeColor', 'none', 'DisplayName', "Hypervolume")
-% contour(Xg, Yg, F, 5, 'LineColor', 0.5*[0 0 0], 'LineWidth', 1, 'DisplayName', 'Density Contours')
-% axis([1 5 3 10])
+% yline(DeltavHohmann, 'w--', 'LineWidth', 2, 'DisplayName', "Hohmann Baseline")
+% yline(DeltavMin, 'w:', 'LineWidth', 2, 'DisplayName', "Theor. Min.")
+% plot(TOFFine-plotShift, DeltavFine, 'Color', [0.75 0 0], 'DisplayName', "Pareto Front")
+% fill(xFill-plotShift, yFill, [1 0 0], 'FaceAlpha', 0.2, 'EdgeColor', 'none', 'DisplayName', "Hypervolume") % 0.1
+% contour(Xg, Yg, F, 5, 'LineColor', 0.5*[1 1 1], 'LineWidth', 1, 'DisplayName', 'Density Contours')
+% axis([1 5 1 10])
 % grid on
 % xlabel("TOF [yrs]", 'Interpreter', 'latex')
 % ylabel("$\Delta v$ [km/s]", 'Interpreter', 'latex')
-% % title("Earth-Moon $3.1$ $L_{2}$ Lyapunov - Sun-Venus $3.000713$ $L_{2}$ S Halo", 'Interpreter', 'latex')
+% title("Earth-Moon $3.13$ $L_{2}$ S Halo - Sun-Venus $3.000713$ $L_{2}$ S Halo", 'Interpreter', 'latex')
 % leg7 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% % phasemap;
-% % pb7 = phasebar('deg', 'Location', 'northeast', 'Size', 0.275, 'Title', "Test");
-% % tpb7 = title(pb7, '$\phi$ [deg]', 'Interpreter', 'latex');
-% % tpb7 = title(pb7, '$\phi_{H}$ [deg]', 'Interpreter', 'latex');
-% % tpb7 = title(pb7, '$\phi_{M}$ [deg]', 'Interpreter', 'latex');
-% % tpb7.Position(2) = tpb7.Position(2)-40;
-% set(gca, 'Color', 'w');
-% view(2)
+% set(gca, 'Color', 'k');
 % hold off
-% % exportgraphics(fig7, 'VenusMMATCR3BP_7.png', 'BackgroundColor', 'w')
+% % exportgraphics(fig7, 'VenusMMATCR3BP_7.png', 'BackgroundColor', 'k')
 % % exportgraphics(fig7, 'VenusMMATCR3BP_7.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+
+% fig8 = figure("Position", [200 100 1200 750]);
+% hold on
+% % scatter(TOFs/24/3600/365.25, Deltavs, 10, angleColor(deg2rad(phi_totals)), 'filled', 'HandleVisibility', 'off')
+% scatter(TOFs/24/3600/365.25, Deltavs, 10, phi_conics, 'filled', 'HandleVisibility', 'off')
+% % scatter(TOFs(transferIdx)/24/3600/365.25, Deltavs(transferIdx), 30, 'w', 'filled', 'HandleVisibility', 'off')
+% axis([1 5 1 10])
+% grid on
+% xlabel("TOF [yrs]", 'Interpreter', 'latex')
+% ylabel("$\Delta v$ [km/s]", 'Interpreter', 'latex')
+% title("Earth-Moon $3.13$ $L_{2}$ S Halo - Sun-Mars $3.000713$ $L_{2}$ S Halo", 'Interpreter', 'latex')
+% % phasemap;
+% % pb8 = phasebar('deg', 'Location', 'northeast', 'Size', 0.275);
+% % tpb8 = title(pb8, '$\phi$ [deg]', 'Interpreter', 'latex');
+% % tpb8.Position(2) = tpb8.Position(2)-40;
+% colormap(viridis)
+% cb8 = colorbar;
+% clim([100 900])
+% ylabel(cb8, "$\phi_{conic}$ [deg]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb8.Label.Position = cb8.Label.Position+[-2 420 0];
+% set(gca, 'Color', 'k');
+% hold off
+% % exportgraphics(fig8, 'VenusMMATCR3BP_8.png', 'BackgroundColor', 'k')
 
 %% Family Comparison
 % % [142:167, 169:194, 196:221]
@@ -621,7 +718,7 @@ F(mask) = NaN;
 % 
 % fig9 = figure("Position", [200 100 1200 750]);
 % tiledlayout(2,1)
-% ax1 = nexttile;
+% ax91 = nexttile;
 % hold on
 % plot(JC_Lyap, HV_Lyap, 'r*-', 'DisplayName', "$L_{2}$ Lyapunov")
 % plot(JC_halo, HV_halo, 'g*-', 'DisplayName', "$L_{2}$ N Halo")
@@ -629,11 +726,14 @@ F(mask) = NaN;
 % plot(JC_axial, HV_axial, 'm*-', 'DisplayName', "$L_{2}$ SW Axial")
 % plot(JC_butt, HV_butt, 'c*-', 'DisplayName', "$L_{2}$ N Butterfly")
 % xticks([2.97, 3.0, 3.03, 3.07, 3.1, 3.13])
+% ylim([3.5 6.5])
 % grid on
 % ylabel("Hypervolume", 'Interpreter', 'latex')
+% title("Earth-Moon Departure Orbit - Sun-Venus $3.000713$ $L_{2}$ Southern Halo", 'Interpreter', 'latex')
 % leg9 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% set(gca, 'Color', 'k');
 % hold off
-% ax2 = nexttile;
+% ax92 = nexttile;
 % hold on
 % plot(JC_Lyap, MD_Lyap, 'r*-', 'DisplayName', "$L_{2}$ Lyapunov")
 % plot(JC_halo, MD_halo, 'g*-', 'DisplayName', "$L_{2}$ S Halo")
@@ -641,202 +741,150 @@ F(mask) = NaN;
 % plot(JC_axial, MD_axial, 'm*-', 'DisplayName', "$L_{2}$ SW Axial")
 % plot(JC_butt, MD_butt, 'c*-', 'DisplayName', "$L_{2}$ S Butterfly")
 % xticks([2.97, 3.0, 3.03, 3.07, 3.1, 3.13])
+% ylim([0.16 0.26])
 % grid on
 % ylabel("Mean Distance", 'Interpreter', 'latex')
 % hold off
 % xlabel("Earth-Moon JC", 'Interpreter', 'latex')
-% % title("Earth-Moon Departure Orbit - Sun-Venus $3.000713$ $L_{2}$ Southern Halo", 'Interpreter', 'latex')
-% set(gca, 'Color', 'w');
-% % exportgraphics(fig9, 'VenusMMATCR3BP_9.png', 'BackgroundColor', 'w')
-
-%% Interpolate Trajectories
-% odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
-% odeCR3BPSE = @(t,r) ODE_CR3BP(t, r, muSE);
-% odeCR3BPSV = @(t,r) ODE_CR3BP(t, r, muSV);
-% 
-% t_interp = t_EM(1)*tstarEM:(24*3600):tspan_arr(end)-transfer.arrivalManifoldArc.TOF*tstarSV;
-% t_dmEM_EM = [t_interp(t_interp < t_EM(end)*tstarEM)./tstarEM, t_EM(end)];
-% t_dmSE_SE = [t_SE(1), t_interp((t_interp > t_SE(1)*tstarSE) & (t_interp < t_SE(end)*tstarSE))./tstarSE, t_SE(end)];
-% t_dc_S = [tspan_dep(1), t_interp((t_interp > tspan_dep(1)) & (t_interp < tspan_dep(end))), tspan_dep(end)];
-% t_bc_S = [tspan_bridge(1), t_interp((t_interp > tspan_bridge(1)) & (t_interp < tspan_bridge(end))), tspan_bridge(end)];
-% t_ac_S = [tspan_arr(1), t_interp((t_interp > tspan_arr(1)) & (t_interp < tspan_arr(end))), tspan_arr(end)];
-% t_am_SV = [tspan_arr(end)/tstarSV, t_interp((t_interp > tspan_arr(end)) & (t_interp < t_interp(end)))./tstarSV, t_interp(end)/tstarSV];
-% t_all = [t_dmEM_EM*tstarEM, t_dmSE_SE*tstarSE, t_dc_S, t_bc_S, t_ac_S, t_am_SV*tstarSV];
-% 
-% IC_dmEM_EM = [transfer.departureManifoldArc1.x(1); transfer.departureManifoldArc1.y(1); transfer.departureManifoldArc1.z(1); transfer.departureManifoldArc1.xdot(1); transfer.departureManifoldArc1.ydot(1); transfer.departureManifoldArc1.zdot(1)];
-% sol_dmEM_EM = ode89(odeCR3BPEM, [t_EM(1) t_EM(end)], IC_dmEM_EM, odeOpts);
-% q_dmEM_EM = deval(sol_dmEM_EM, t_dmEM_EM)';
-% t_dmEM_SE = t_dmEM_EM.*tstarEM./tstarSE;
-% q_dmEM_EI = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, t_dmEM_EM, q_dmEM_EM);
-% Q_dmEM_EI = [q_dmEM_EI(:,1:3).*lstarEM./lstarSE, q_dmEM_EI(:,4:6).*lstarEM.*tstarSE./lstarSE./tstarEM];
-% q_dmEM_SE = P2EclipJ2000ToRot(muSE, transfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, t_dmEM_SE, Q_dmEM_EI);
-% q_dmEM_S = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_dmEM_SE, q_dmEM_SE);
-% Q_dmEM_S = [q_dmEM_S(:,1:3).*lstarSE, q_dmEM_S(:,4:6).*lstarSE./tstarSE];
-% 
-% IC_dmSE_SE = [transfer.departureManifoldArc2.x(1); transfer.departureManifoldArc2.y(1); transfer.departureManifoldArc2.z(1); transfer.departureManifoldArc2.xdot(1); transfer.departureManifoldArc2.ydot(1); transfer.departureManifoldArc2.zdot(1)];
-% sol_dmSE_SE = ode89(odeCR3BPSE, [t_SE(1) t_SE(end)], IC_dmSE_SE, odeOpts);
-% q_dmSE_SE = deval(sol_dmSE_SE, t_dmSE_SE)';
-% q_dmSE_S = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, t_dmSE_SE, q_dmSE_SE);
-% Q_dmSE_S = [q_dmSE_S(:,1:3).*lstarSE, q_dmSE_S(:,4:6).*lstarSE./tstarSE];
-% 
-% Q_dc_S = deval(dep_sol, t_dc_S)';
-% 
-% Q_bc_S = deval(bridge_sol, t_bc_S)';
-% 
-% Q_ac_S = deval(arr_sol, t_ac_S)';
-% 
-% IC_am_SV = [transfer.arrivalManifoldArc.x(1); transfer.arrivalManifoldArc.y(1); transfer.arrivalManifoldArc.z(1); transfer.arrivalManifoldArc.xdot(1); transfer.arrivalManifoldArc.ydot(1); transfer.arrivalManifoldArc.zdot(1)];
-% sol_am_SV = ode89(odeCR3BPSV, [t_SV(1) t_SV(end)], IC_am_SV, odeOpts);
-% q_am_SV = deval(sol_am_SV, t_am_SV-t_am_SV(end)+t_SV(1))';
-% q_am_S = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_am_SV+-t_am_SV(end)+transfer.theta_arr_f, q_am_SV);
-% Q_am_S = [q_am_S(:,1:3).*lstarSV, q_am_S(:,4:6).*lstarSV./tstarSV];
-% 
-% Moon_dm_EI = rotToP1EclipJ2000(muEM, transfer.initialEpoch, 'Earth', gmE, 'Moon', lstarEM, tstarEM, [t_dmEM_EM, t_dmSE_SE.*tstarSE./tstarEM], ones(length(t_dmEM_EM)+length(t_dmSE_SE), 1)*[1-muEM, zeros(1, 5)]);
-% MOON_dm_EI = [Moon_dm_EI(:,1:3).*lstarEM./lstarSE, Moon_dm_EI(:,4:6).*lstarEM.*tstarSE./lstarSE./tstarEM];
-% Moon_dm_SE = P2EclipJ2000ToRot(muSE, transfer.initialEpoch, 'Sun', gmS, 'Earth', lstarSE, tstarSE, [t_dmEM_SE, t_dmSE_SE], MOON_dm_EI);
-% 
-% Earth_dm_S = planetRotToSunEclipJ2000(muSE, transfer.initialEpoch, 'Earth', lstarSE, tstarSE, [t_dmEM_SE, t_dmSE_SE, t_dc_S./tstarSE, t_bc_S./tstarSE, t_ac_S./tstarSE, t_am_SV.*tstarSV./tstarSE], ones(length(t_dmEM_SE)+length(t_dmSE_SE)+length(t_dc_S)+length(t_bc_S)+length(t_ac_S)+length(t_am_SV), 1)*[1-muSE, zeros(1, 5)]);
-% EARTH_dm_S = [Earth_dm_S(:,1:3).*lstarSE, Earth_dm_S(:,4:6).*lstarSE./tstarSE];
-% 
-% t_dm_SV = ([t_dmEM_SE, t_dmSE_SE, t_dc_S./tstarSE, t_bc_S./tstarSE, t_ac_S./tstarSE, t_am_SV.*tstarSV./tstarSE]-t_dmEM_SE(1)).*tstarSE./tstarSV+transfer.theta_arr_0;
-% Venus_dm_S = planetRotToSunEclipJ2000(muSV, transfer.initialEpoch, 'Venus', lstarSV, tstarSV, t_dm_SV, ones(length(t_dm_SV), 1)*[1-muSV, 0, 0, 0, 0, 0]);
-% VENUS_dm_S = [Venus_dm_S(:,1:3).*lstarSV, Venus_dm_S(:,4:6).*lstarSV./tstarSV];
+% set(gca, 'Color', 'k');
+% % exportgraphics(fig9, 'VenusMMATCR3BP_9.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig9, 'VenusMMATCR3BP_9.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Animation
-% TO DO: Dimensionalize units, make consistent with Mars script
-
 % fig10 = figure('Position', [100 100 1500 750]);
-% % tl = tiledlayout(2, 2, 'TileSpacing', 'tight', 'Padding', 'tight', 'OuterPosition', [0.2 0.05 0.75 0.9]);
-% tl = tiledlayout(2, 2, 'TileSpacing', 'tight', 'Padding', 'tight');
 % 
-% axEM = nexttile;
-% axSE = nexttile;
-% axS = nexttile;
-% axSV = nexttile;
-% allAxes = [axEM, axSE, axS, axSV];
+% axS = axes('Position', [0.08 0.04 0.52 0.91]);
+% insetPos = [0.67 0.4 0.23 0.55];
+% axEM = axes('Position', insetPos);
+% axSE = axes('Position', insetPos);
+% axSV = axes('Position', insetPos);
+% allAxes = [axS, axEM, axSE, axSV];
 % for a = allAxes
 %     axis(a, 'equal');
 %     grid(a, 'on');
 %     hold(a, 'on');
 % end
 % 
-% xlabel(axEM, "$x$ [EM ndim]", 'Interpreter', 'latex')
-% ylabel(axEM, "$y$ [EM ndim]", 'Interpreter', 'latex')
-% zlabel(axEM, "$z$ [EM ndim]", 'Interpreter', 'latex')
+% xlabel(axS, "$X$ [AU]", 'Interpreter', 'latex')
+% ylabel(axS, "$Y$ [AU]", 'Interpreter', 'latex')
+% zlabel(axS, "$Z$ [AU]", 'Interpreter', 'latex')
+% title(axS, "Sun-Centered Eclip. J2000", 'Interpreter', 'latex')
+% view(axS, 3)
+% axS.ZTick = 0;
+% xlabel(axEM, "$x$ [AU]", 'Interpreter', 'latex')
+% ylabel(axEM, "$y$ [AU]", 'Interpreter', 'latex')
+% zlabel(axEM, "$z$ [AU]", 'Interpreter', 'latex')
 % title(axEM, "Earth-Moon Rot.", 'Interpreter', 'latex')
 % view(axEM, 3)
-% xlabel(axSE, "$x$ [SE ndim]", 'Interpreter', 'latex')
-% ylabel(axSE, "$y$ [SE ndim]", 'Interpreter', 'latex')
-% zlabel(axSE, "$z$ [SE ndim]", 'Interpreter', 'latex')
+% xlabel(axSE, "$x$ [AU]", 'Interpreter', 'latex')
+% ylabel(axSE, "$y$ [AU]", 'Interpreter', 'latex')
+% hzSE = zlabel(axSE, "$z$ [AU]", 'Interpreter', 'latex');
 % title(axSE, "Sun-Earth Rot.", 'Interpreter', 'latex')
 % view(axSE, 3)
-% xlabel(axS, "$X$ [km]", 'Interpreter', 'latex')
-% ylabel(axS, "$Y$ [km]", 'Interpreter', 'latex')
-% zlabel(axS, "$Z$ [km]", 'Interpreter', 'latex')
-% title(axS, "Eclip. J2000", 'Interpreter', 'latex')
-% view(axS, 3)
-% xlabel(axSV, "$x$ [SV ndim]", 'Interpreter', 'latex')
-% ylabel(axSV, "$y$ [SV ndim]", 'Interpreter', 'latex')
-% zlabel(axSV, "$z$ [SV ndim]", 'Interpreter', 'latex')
+% xlabel(axSV, "$x$ [AU]", 'Interpreter', 'latex')
+% ylabel(axSV, "$y$ [AU]", 'Interpreter', 'latex')
+% zlabel(axSV, "$z$ [AU]", 'Interpreter', 'latex')
 % title(axSV, "Sun-Venus Rot.", 'Interpreter', 'latex')
 % view(axSV, 3)
 % 
-% [Earth_EM, ~, ~, ~] = plot3DBodyVid(axEM, "Earth", RE/lstarEM, [-muEM, 0, 0]);
-% set(Earth_EM, 'DisplayName', "Earth")
-% [Moon_EM, ~, ~, ~] = plot3DBodyVid(axEM, "Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-% set(Moon_EM, 'DisplayName', "Moon")
-% L1_EM = scatter3(axEM, a1EM, 0, 0, 20, 'r', 'filled', 'd', 'HandleVisibility', 'off');
-% L2_EM = scatter3(axEM, a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'HandleVisibility', 'off');
-% orbit_EM = plot3(axEM, transfer.departureOrbit.x, transfer.departureOrbit.y, transfer.departureOrbit.z, '--', 'Color', [0.5 0.5 0], 'DisplayName', "Dep. Orbit");
-% traj_dmEM_EM = plot3(axEM, q_dmEM_EM(:,1), q_dmEM_EM(:,2), q_dmEM_EM(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% [Sun_S, ~, ~, ~] = plot3DBodyVid(axS, "Sun", 10*RS/lstarSE, [0, 0, 0]);
+% set(Sun_S, 'DisplayName', "Sun")
+% theta = 0:0.01:2*pi;
+% traj_Earth_S = plot3(axS, EARTH_S(1:Earth_idx,1)./lstarSE, EARTH_S(1:Earth_idx,2)./lstarSE, EARTH_S(1:Earth_idx,3)./lstarSE, 'g:', 'DisplayName', "Earth Orbit");
+% traj_Venus_S = plot3(axS, VENUS_S(1:Venus_idx,1)./lstarSE, VENUS_S(1:Venus_idx,2)./lstarSE, VENUS_S(1:Venus_idx,3)./lstarSE, ':', 'Color', [1 0.5 0], 'DisplayName', "Venus Orbit");
+% traj_dmEM_S = plot3(axS, Q_dmEM_S(:,1)./lstarSE, Q_dmEM_S(:,2)./lstarSE, Q_dmEM_S(:,3)./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% traj_dmSE_S = plot3(axS, Q_dmSE_S(:,1)./lstarSE, Q_dmSE_S(:,2)./lstarSE, Q_dmSE_S(:,3)./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% traj_dc_S = plot3(axS, Q_dc_S(:,1)./lstarSE, Q_dc_S(:,2)./lstarSE, Q_dc_S(:,3)./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% traj_bc_S = plot3(axS, Q_bc_S(:,1)./lstarSE, Q_bc_S(:,2)./lstarSE, Q_bc_S(:,3)./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% traj_ac_S = plot3(axS, Q_ac_S(:,1)./lstarSE, Q_ac_S(:,2)./lstarSE, Q_ac_S(:,3)./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% traj_am_S = plot3(axS, Q_am_S(:,1)./lstarSE, Q_am_S(:,2)./lstarSE, Q_am_S(:,3)./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% Deltav1 = scatter3(axS, NaN, NaN, NaN, 20, 'w', 'filled', '^', 'DisplayName', "Maneuver");
+% Deltav2 = scatter3(axS, NaN, NaN, NaN, 20, 'w', 'filled', '^', 'HandleVisibility', 'off');
 % 
-% [Earth_SE, ~, ~, ~] = plot3DBodyVid(axSE, "Earth", 2*RE/lstarSE, [1-muSE, 0, 0]);
+% % [Earth_EM, ~, ~, ~] = plot3DBodyVid(axEM, "Earth", RE/lstarSE, [-muEM, 0, 0].*lstarEM./lstarSE);
+% % set(Earth_EM, 'DisplayName', "Earth")
+% [Moon_EM, ~, ~, ~] = plot3DBodyVid(axEM, "Moon", Rm/lstarSE, [1-muEM, 0, 0].*lstarEM./lstarSE);
+% set(Moon_EM, 'DisplayName', "Moon")
+% L1_EM = scatter3(axEM, a1EM*lstarEM/lstarSE, 0, 0, 20, 'r', 'filled', 'd', 'HandleVisibility', 'off');
+% L2_EM = scatter3(axEM, a2EM*lstarEM/lstarSE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'HandleVisibility', 'off');
+% orbit_EM = plot3(axEM, transfer.departureOrbit.x.*lstarEM./lstarSE, transfer.departureOrbit.y.*lstarEM./lstarSE, transfer.departureOrbit.z.*lstarEM./lstarSE, ':', 'Color', [0.5 0.5 0], 'DisplayName', "Dep. Orbit");
+% traj_dmEM_EM = plot3(axEM, q_dmEM_EM(:,1).*lstarEM./lstarSE, q_dmEM_EM(:,2).*lstarEM./lstarSE, q_dmEM_EM(:,3).*lstarEM./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% 
+% [Earth_SE, ~, ~, ~] = plot3DBodyVid(axSE, "Earth", 10*RE/lstarSE, [1-muSE, 0, 0]);
 % set(Earth_SE, 'HandleVisibility', 'off')
 % L1_SE = scatter3(axSE, a1SE, 0, 0, 20, 'r', 'filled', 'd', 'HandleVisibility', 'off');
-% traj_Moon_SE = plot3(axSE, Moon_dm_SE(:,1), Moon_dm_SE(:,2), Moon_dm_SE(:,3), 'k:', 'DisplayName', "Moon Orbit");
+% % L2_SE = scatter3(axSE, a2SE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'HandleVisibility', 'off');
+% traj_Moon_SE = plot3(axSE, Moon_SE(:,1), Moon_SE(:,2), Moon_SE(:,3), 'w:', 'DisplayName', "Moon Orbit");
 % traj_dmEM_SE = plot3(axSE, q_dmEM_SE(:,1), q_dmEM_SE(:,2), q_dmEM_SE(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
 % traj_dmSE_SE = plot3(axSE, q_dmSE_SE(:,1), q_dmSE_SE(:,2), q_dmSE_SE(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
 % 
-% [Sun_S, ~, ~, ~] = plot3DBodyVid(axS, "Sun", 7*RS, [0, 0, 0]);
-% set(Sun_S, 'DisplayName', "Sun")
-% theta = 0:0.01:2*pi;
-% traj_Earth_S = plot3(axS, EARTH_dm_S(:,1), EARTH_dm_S(:,2), EARTH_dm_S(:,3), 'g:', 'DisplayName', "Earth Orbit");
-% traj_Venus_S = plot3(axS, VENUS_dm_S(:,1), VENUS_dm_S(:,2), VENUS_dm_S(:,3), ':', 'Color', [1 0.5 0], 'DisplayName', "Venus Orbit");
-% traj_dmEM_S = plot3(axS, Q_dmEM_S(:,1), Q_dmEM_S(:,2), Q_dmEM_S(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
-% traj_dmSE_S = plot3(axS, Q_dmSE_S(:,1), Q_dmSE_S(:,2), Q_dmSE_S(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
-% traj_dc_S = plot3(axS, Q_dc_S(:,1), Q_dc_S(:,2), Q_dc_S(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
-% traj_bc_S = plot3(axS, Q_bc_S(:,1), Q_bc_S(:,2), Q_bc_S(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
-% traj_ac_S = plot3(axS, Q_ac_S(:,1), Q_ac_S(:,2), Q_ac_S(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
-% traj_am_S = plot3(axS, Q_am_S(:,1), Q_am_S(:,2), Q_am_S(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
-% Deltav1 = scatter3(axS, NaN, NaN, NaN, 20, 'k', 'filled', '^', 'DisplayName', "Maneuver");
-% Deltav2 = scatter3(axS, NaN, NaN, NaN, 20, 'k', 'filled', '^', 'HandleVisibility', 'off');
-% 
-% [Venus_SV, ~, ~, ~] = plot3DBodyVid(axSV, "Venus", 5*RV/lstarSV, [1-muSV, 0, 0]);
+% [Venus_SV, ~, ~, ~] = plot3DBodyVid(axSV, "Venus", 10*RV/lstarSE, [1-muSV, 0, 0].*lstarSV./lstarSE);
 % set(Venus_SV, 'DisplayName', "Venus")
-% L2_SV = scatter3(axSV, a2SV, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'HandleVisibility', 'off');
-% orbit_SV = plot3(axSV, transfer.arrivalOrbit.x, transfer.arrivalOrbit.y, transfer.arrivalOrbit.z, '--', 'Color', [0 0.5 0.5], 'DisplayName', "Arr. Orbit");
-% traj_am_SV = plot3(axSV, q_am_SV(:,1), q_am_SV(:,2), q_am_SV(:,3), 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
+% L2_SV = scatter3(axSV, a2SV*lstarSV/lstarSE, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'HandleVisibility', 'off');
+% orbit_SV = plot3(axSV, transfer.arrivalOrbit.x.*lstarSV./lstarSE, transfer.arrivalOrbit.y.*lstarSV./lstarSE, transfer.arrivalOrbit.z.*lstarSV./lstarSE, ':', 'Color', [0 0.5 0.5], 'DisplayName', "Arr. Orbit");
+% traj_am_SV = plot3(axSV, q_am_SV(:,1).*lstarSV./lstarSE, q_am_SV(:,2).*lstarSV./lstarSE, q_am_SV(:,3).*lstarSV./lstarSE, 'Color', [0 0 0 0.2], 'LineWidth', 0.5, 'HandleVisibility', 'off');
 % 
-% hist_dmEM_EM = plot3(axEM, NaN, NaN, NaN, 'r', 'DisplayName', "Dep. CR3BP Arc");
-% 
-% hist_dmEM_SE = plot3(axSE, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
-% hist_dmSE_SE = plot3(axSE, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
-% 
-% hist_dmEM_S = plot3(axS, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
+% hist_dmEM_S = plot3(axS, NaN, NaN, NaN, 'r', 'DisplayName', "Dep. CR3BP Arc");
 % hist_dmSE_S = plot3(axS, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
 % hist_dc_S = plot3(axS, NaN, NaN, NaN, 'm', 'DisplayName', "Dep. Conic");
 % hist_bc_S = plot3(axS, NaN, NaN, NaN, 'Color', [0.5 0 0.5], 'DisplayName', "Bridge Conic");
 % hist_ac_S = plot3(axS, NaN, NaN, NaN, 'c', 'DisplayName', "Arr. Conic");
 % hist_am_S = plot3(axS, NaN, NaN, NaN, 'b', 'DisplayName', "Arr. CR3BP Arc");
 % 
+% hist_dmEM_EM = plot3(axEM, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
+% 
+% hist_dmEM_SE = plot3(axSE, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
+% hist_dmSE_SE = plot3(axSE, NaN, NaN, NaN, 'r', 'HandleVisibility', 'off');
+% 
 % hist_amSV_SV = plot3(axSV, NaN, NaN, NaN, 'b' , 'HandleVisibility', 'off');
 % 
-% mark_EM = scatter3(axEM, NaN, NaN, NaN, 20, 'r', 'filled', 'HandleVisibility', 'off');
-% 
-% [mark_Moon_SE, sx_m, sy_m, sz_m] = plot3DBodyVid(axSE, "Moon", 5*Rm/lstarSE, [0, 0, 0]);
-% mark_SE = scatter3(axSE, NaN, NaN, NaN, 20, 'r', 'filled', 'HandleVisibility', 'off');
-% 
-% [mark_Earth_S, sx_E, sy_E, sz_E] = plot3DBodyVid(axS, "Earth", 500*RE, [0, 0, 0]);
-% [mark_Venus_S, sx_V, sy_V, sz_V] = plot3DBodyVid(axS, "Venus", 500*RV, [0, 0, 0]);
+% [mark_Earth_S, sx_E, sy_E, sz_E] = plot3DBodyVid(axS, "Earth", 1000*RE/lstarSE, [0, 0, 0]);
+% [mark_Venus_S, sx_V, sy_V, sz_V] = plot3DBodyVid(axS, "Venus", 1000*RV/lstarSE, [0, 0, 0]);
 % mark_dm_S = scatter3(axS, NaN, NaN, NaN, 20, 'r', 'filled', 'HandleVisibility', 'off');
 % mark_dc_S = scatter3(axS, NaN, NaN, NaN, 20, 'm', 'filled', 'HandleVisibility', 'off');
 % mark_bc_S = scatter3(axS, NaN, NaN, NaN, 20, [0.5 0 0.5], 'filled', 'HandleVisibility', 'off');
 % mark_ac_S = scatter3(axS, NaN, NaN, NaN, 20, 'c', 'filled', 'HandleVisibility', 'off');
 % mark_am_S = scatter3(axS, NaN, NaN, NaN, 20, 'b', 'filled', 'HandleVisibility', 'off');
 % 
+% mark_EM = scatter3(axEM, NaN, NaN, NaN, 20, 'r', 'filled', 'HandleVisibility', 'off');
+% 
+% [mark_Moon_SE, sx_m, sy_m, sz_m] = plot3DBodyVid(axSE, "Moon", 10*Rm/lstarSE, [0, 0, 0]);
+% mark_SE = scatter3(axSE, NaN, NaN, NaN, 20, 'r', 'filled', 'HandleVisibility', 'off');
+% 
 % mark_SV = scatter3(axSV, NaN, NaN, NaN, 20, 'b', 'filled', 'HandleVisibility', 'off');
 % 
 % pad = 0.05;
-% allx_EM = [-muEM-RE/lstarEM; -muEM+RE/lstarEM; 1-muEM-Rm/lstarEM; 1-muEM+Rm/lstarEM; transfer.departureOrbit.x; q_dmEM_EM(:,1)];
-% ally_EM = [-RE/lstarEM; RE/lstarEM; -Rm/lstarEM; Rm/lstarEM; transfer.departureOrbit.y; q_dmEM_EM(:,2)];
-% allz_EM = [-RE/lstarEM; RE/lstarEM; -Rm/lstarEM; Rm/lstarEM; transfer.departureOrbit.z; q_dmEM_EM(:,3)];
-% limx_EM = axLimits(allx_EM, pad);
-% limy_EM = axLimits(ally_EM, pad);
-% limz_EM = axLimits(allz_EM, pad);
-% xlim(axEM, limx_EM)
-% ylim(axEM, limy_EM)
-% zlim(axEM, limz_EM)
-% allx_SE = [1-muSE-RE/lstarSE; 1-muSE+RE/lstarSE; Moon_dm_SE(:,1); q_dmEM_SE(:,1); q_dmSE_SE(1:end-100,1)];
-% ally_SE = [-RE/lstarSE; RE/lstarSE; Moon_dm_SE(:,2); q_dmEM_SE(:,2); q_dmSE_SE(1:end-100,2)];
-% allz_SE = [-RE/lstarSE; RE/lstarSE; Moon_dm_SE(:,3); q_dmEM_SE(:,3); q_dmSE_SE(1:end-100,3)];
-% limx_SE = axLimits(allx_SE, pad);
-% limy_SE = axLimits(ally_SE, pad);
-% limz_SE = axLimits(allz_SE, pad);
-% xlim(axSE, limx_SE)
-% ylim(axSE, limy_SE)
-% zlim(axSE, limz_SE)
-% allx_S = [-10*RS; 10*RS; EARTH_dm_S(:,1); VENUS_dm_S(:,1); Q_dmEM_S(:,1); Q_dmSE_S(:,1); Q_dc_S(:,1); Q_bc_S(:,1); Q_ac_S(:,1); Q_am_S(:,1)];
-% ally_S = [-10*RS; 10*RS; EARTH_dm_S(:,2); VENUS_dm_S(:,2); Q_dmEM_S(:,2); Q_dmSE_S(:,2); Q_dc_S(:,2); Q_bc_S(:,2); Q_ac_S(:,2); Q_am_S(:,2)];
-% allz_S = [-10*RS; 10*RS; EARTH_dm_S(:,3); VENUS_dm_S(:,3); Q_dmEM_S(:,3); Q_dmSE_S(:,3); Q_dc_S(:,3); Q_bc_S(:,3); Q_ac_S(:,3); Q_am_S(:,3)];
+% allx_S = [-10*RS/lstarSE; 10*RS/lstarSE; (EARTH_S(:,1)+1000*RE)./lstarSE; (EARTH_S(:,1)-1000*RE)./lstarSE; (VENUS_S(:,1)+1000*RV)./lstarSE; (VENUS_S(:,1)-1000*RV)./lstarSE; Q_dmEM_S(:,1)./lstarSE; Q_dmSE_S(:,1)./lstarSE; Q_dc_S(:,1)./lstarSE; Q_bc_S(:,1)./lstarSE; Q_ac_S(:,1)./lstarSE; Q_am_S(:,1)./lstarSE];
+% ally_S = [-10*RS/lstarSE; 10*RS/lstarSE; (EARTH_S(:,2)+1000*RE)./lstarSE; (EARTH_S(:,2)-1000*RE)./lstarSE; (VENUS_S(:,2)+1000*RV)./lstarSE; (VENUS_S(:,2)-1000*RV)./lstarSE; Q_dmEM_S(:,2)./lstarSE; Q_dmSE_S(:,2)./lstarSE; Q_dc_S(:,2)./lstarSE; Q_bc_S(:,2)./lstarSE; Q_ac_S(:,2)./lstarSE; Q_am_S(:,2)./lstarSE];
+% allz_S = [-10*RS/lstarSE; 10*RS/lstarSE; (EARTH_S(:,3)+1000*RE)./lstarSE; (EARTH_S(:,3)-1000*RE)./lstarSE; (VENUS_S(:,3)+1000*RV)./lstarSE; (VENUS_S(:,3)-1000*RV)./lstarSE; Q_dmEM_S(:,3)./lstarSE; Q_dmSE_S(:,3)./lstarSE; Q_dc_S(:,3)./lstarSE; Q_bc_S(:,3)./lstarSE; Q_ac_S(:,3)./lstarSE; Q_am_S(:,3)./lstarSE];
 % limx_S = axLimits(allx_S, pad);
 % limy_S = axLimits(ally_S, pad);
 % limz_S = axLimits(allz_S, pad);
 % xlim(axS, limx_S)
 % ylim(axS, limy_S)
 % zlim(axS, limz_S)
-% allx_SV = [1-muSV-5*RV/lstarSV; 1-muSV+5*RV/lstarSV; transfer.arrivalOrbit.x; q_am_SV(51:end,1)];
-% ally_SV = [-5*RV/lstarSV; 5*RV/lstarSV; transfer.arrivalOrbit.y; q_am_SV(51:end,2)];
-% allz_SV = [-5*RV/lstarSV; 5*RV/lstarSV; transfer.arrivalOrbit.z; q_am_SV(51:end,3)];
+% allx_EM = [(1-muEM-Rm/lstarEM).*lstarEM./lstarSE; (1-muEM+Rm/lstarEM).*lstarEM./lstarSE; transfer.departureOrbit.x.*lstarEM./lstarSE; q_dmEM_EM(:,1).*lstarEM./lstarSE];
+% ally_EM = [-Rm/lstarSE; Rm/lstarSE; transfer.departureOrbit.y.*lstarEM./lstarSE; q_dmEM_EM(:,2).*lstarEM./lstarSE];
+% allz_EM = [-Rm/lstarSE; Rm/lstarSE; transfer.departureOrbit.z.*lstarEM./lstarSE; q_dmEM_EM(:,3).*lstarEM./lstarSE];
+% limx_EM = axLimits(allx_EM, pad);
+% limy_EM = axLimits(ally_EM, pad);
+% limz_EM = axLimits(allz_EM, pad);
+% xlim(axEM, limx_EM)
+% ylim(axEM, limy_EM)
+% zlim(axEM, limz_EM)
+% allx_SE = [1-muSE-RE/lstarSE; 1-muSE+RE/lstarSE; Moon_SE(:,1); q_dmEM_SE(:,1); q_dmSE_SE(1:end-cutoff_SE,1)];
+% ally_SE = [-RE/lstarSE; RE/lstarSE; Moon_SE(:,2); q_dmEM_SE(:,2); q_dmSE_SE(1:end-cutoff_SE,2)];
+% allz_SE = [-RE/lstarSE; RE/lstarSE; Moon_SE(:,3); q_dmEM_SE(:,3); q_dmSE_SE(1:end-cutoff_SE,3)];
+% limx_SE = axLimits(allx_SE, pad);
+% limy_SE = axLimits(ally_SE, pad);
+% limz_SE = axLimits(allz_SE, pad);
+% xlim(axSE, limx_SE)
+% ylim(axSE, limy_SE)
+% zlim(axSE, limz_SE)
+% shiftZLabel(axSE, hzSE, 0.15)
+% allx_SV = [(1-muSV-10*RV/lstarSV).*lstarSV./lstarSE; (1-muSV+10*RV/lstarSV).*lstarSV./lstarSE; transfer.arrivalOrbit.x.*lstarSV./lstarSE; q_am_SV(cutoff_SV+1:end,1).*lstarSV./lstarSE];
+% ally_SV = [-10*RV/lstarSE; 10*RV/lstarSE; transfer.arrivalOrbit.y.*lstarSV./lstarSE; q_am_SV(cutoff_SV+1:end,2).*lstarSV./lstarSE];
+% allz_SV = [-10*RV/lstarSE; 10*RV/lstarSE; transfer.arrivalOrbit.z.*lstarSV./lstarSE; q_am_SV(cutoff_SV+1:end,3).*lstarSV./lstarSE];
 % limx_SV = axLimits(allx_SV, pad);
 % limy_SV = axLimits(ally_SV, pad);
 % limz_SV = axLimits(allz_SV, pad);
@@ -844,147 +892,170 @@ F(mask) = NaN;
 % ylim(axSV, limy_SV)
 % zlim(axSV, limz_SV)
 % 
-% % leg10 = legend(axEM, [Sun_S, Earth_EM, traj_Earth_S, Moon_EM, traj_Moon_SE, Venus_SV, traj_Venus_S, orbit_EM, orbit_SV, hist_dmEM_EM, hist_dc_S, hist_bc_S, hist_ac_S, hist_am_S, Deltav1], 'AutoUpdate', 'off');
-% % drawnow;
-% % set(leg10.EntryContainer.NodeChildren(end-1).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]));
-% % legPos = [-0.25 0.2 0.3 0.7];
-% % set(leg10, 'Units', 'normalized', 'Position', legPos);
-% tit10 = title(tl, sprintf('Elapsed Time: %.0f d.', (t_all(1)-t_all(1))/3600/24), 'FontName', 'Times New Roman', 'FontSize', 20);
+% tit10 = annotation(fig10, 'textbox', [0.4 0.93 0.2 0.06], 'String', 'Elapsed Time: 0 d.', 'FontName', 'Times New Roman', 'FontSize', 18, 'Color', 'w', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle');
 % 
-% % v = VideoWriter('VenusMMATCR3BP.mp4', 'MPEG-4');
-% % v.FrameRate = 30;
+% % v = VideoWriter('VenusMMATCR3BP_sample.mp4', 'MPEG-4');
+% % v.FrameRate = 40;
 % % v.Quality = 100;
 % % open(v);
 % 
 % stride = 1;
 % tailLen = Inf;
+% setAxVisible(axS, true);
+% setAxVisible(axEM, true);
+% setAxVisible(axSE, false);
+% setAxVisible(axSV, false);
 % 
 % N1 = length(t_dmEM_EM);
 % for j = 1:stride:N1
 %     i0 = max(1, j-tailLen);
 % 
-%     set(hist_dmEM_EM, 'XData', q_dmEM_EM(i0:j,1), 'YData', q_dmEM_EM(i0:j,2), 'ZData', q_dmEM_EM(i0:j,3));
-%     set(mark_EM, 'XData', q_dmEM_EM(j,1), 'YData', q_dmEM_EM(j,2), 'ZData', q_dmEM_EM(j,3));
+%     set(hist_dmEM_S, 'XData', Q_dmEM_S(i0:j,1)./lstarSE, 'YData', Q_dmEM_S(i0:j,2)./lstarSE, 'ZData', Q_dmEM_S(i0:j,3)./lstarSE);
+%     set(mark_Earth_S, 'XData', sx_E+EARTH_S(j,1)./lstarSE, 'YData', sy_E+EARTH_S(j,2)./lstarSE, 'ZData', sz_E+EARTH_S(j,3)./lstarSE);
+%     set(mark_Venus_S, 'XData', sx_V+VENUS_S(j,1)./lstarSE, 'YData', sy_V+VENUS_S(j,2)./lstarSE, 'ZData', sz_V+VENUS_S(j,3)./lstarSE);
+%     set(mark_dm_S, 'XData', Q_dmEM_S(j,1)./lstarSE, 'YData', Q_dmEM_S(j,2)./lstarSE, 'ZData', Q_dmEM_S(j,3)./lstarSE);
 % 
-%     set(hist_dmEM_SE, 'XData', q_dmEM_SE(i0:j,1), 'YData', q_dmEM_SE(i0:j,2), 'ZData', q_dmEM_SE(i0:j,3));
-%     set(mark_Moon_SE, 'XData', sx_m+Moon_dm_SE(j,1), 'YData', sy_m+Moon_dm_SE(j,2), 'ZData', sz_m+Moon_dm_SE(j,3));
-%     set(mark_SE, 'XData', q_dmEM_SE(j,1), 'YData', q_dmEM_SE(j,2), 'ZData', q_dmEM_SE(j,3));
+%     set(hist_dmEM_EM, 'XData', q_dmEM_EM(i0:j,1).*lstarEM./lstarSE, 'YData', q_dmEM_EM(i0:j,2).*lstarEM./lstarSE, 'ZData', q_dmEM_EM(i0:j,3).*lstarEM./lstarSE);
+%     set(mark_EM, 'XData', q_dmEM_EM(j,1).*lstarEM./lstarSE, 'YData', q_dmEM_EM(j,2).*lstarEM./lstarSE, 'ZData', q_dmEM_EM(j,3).*lstarEM./lstarSE);
 % 
-%     set(hist_dmEM_S, 'XData', Q_dmEM_S(i0:j,1), 'YData', Q_dmEM_S(i0:j,2), 'ZData', Q_dmEM_S(i0:j,3));
-%     set(mark_Earth_S, 'XData', sx_E+EARTH_dm_S(j,1), 'YData', sy_E+EARTH_dm_S(j,2), 'ZData', sz_E+EARTH_dm_S(j,3));
-%     set(mark_Venus_S, 'XData', sx_V+VENUS_dm_S(j,1), 'YData', sy_V+VENUS_dm_S(j,2), 'ZData', sz_V+VENUS_dm_S(j,3));
-%     set(mark_dm_S, 'XData', Q_dmEM_S(j,1), 'YData', Q_dmEM_S(j,2), 'ZData', Q_dmEM_S(j,3));
+%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', floor((t_all(j)-t_all(1))/3600/24)));
 % 
-%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', (t_all(j)-t_all(1))/3600/24));
-%     
+%     if j == N1-1
+%         setAxVisible(axEM, false);
+%     end
+% 
 %     drawnow limitrate;
-% %     set(leg10, 'Units', 'normalized', 'Position', legPos);
-% 
 %     pause(0.1)
-% %     writeVideo(v, getframe(fig10));
+%     % writeVideo(v, getframe(fig10));
 % end
+% stride = 2;
+% set(hist_dmEM_SE, 'XData', q_dmEM_SE(:,1), 'YData', q_dmEM_SE(:,2), 'ZData', q_dmEM_SE(:,3));
+% setAxVisible(axSE, true);
 % N2 = length(t_dmSE_SE);
 % for j = 2:stride:N2
 %     i0 = max(1, j-tailLen);
 % 
-%     set(mark_EM, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
+%     set(hist_dmSE_S, 'XData', Q_dmSE_S(i0:j,1)./lstarSE, 'YData', Q_dmSE_S(i0:j,2)./lstarSE, 'ZData', Q_dmSE_S(i0:j,3)./lstarSE);
+%     set(mark_Earth_S, 'XData', sx_E+EARTH_S(N1+j,1)./lstarSE, 'YData', sy_E+EARTH_S(N1+j,2)./lstarSE, 'ZData', sz_E+EARTH_S(N1+j,3)./lstarSE);
+%     set(mark_Venus_S, 'XData', sx_V+VENUS_S(N1+j,1)./lstarSE, 'YData', sy_V+VENUS_S(N1+j,2)./lstarSE, 'ZData', sz_V+VENUS_S(N1+j,3)./lstarSE);
+%     set(mark_dm_S, 'XData', Q_dmSE_S(j,1)./lstarSE, 'YData', Q_dmSE_S(j,2)./lstarSE, 'ZData', Q_dmSE_S(j,3)./lstarSE);
 % 
 %     set(hist_dmSE_SE, 'XData', q_dmSE_SE(i0:j,1), 'YData', q_dmSE_SE(i0:j,2), 'ZData', q_dmSE_SE(i0:j,3));
-%     set(mark_Moon_SE, 'XData', sx_m+Moon_dm_SE(N1+j,1), 'YData', sy_m+Moon_dm_SE(N1+j,2), 'ZData', sz_m+Moon_dm_SE(N1+j,3));
+%     set(mark_Moon_SE, 'XData', sx_m+Moon_SE(N1+j,1), 'YData', sy_m+Moon_SE(N1+j,2), 'ZData', sz_m+Moon_SE(N1+j,3));
 %     set(mark_SE, 'XData', q_dmSE_SE(j,1), 'YData', q_dmSE_SE(j,2), 'ZData', q_dmSE_SE(j,3));
 % 
-%     set(hist_dmSE_S, 'XData', Q_dmSE_S(i0:j,1), 'YData', Q_dmSE_S(i0:j,2), 'ZData', Q_dmSE_S(i0:j,3));
-%     set(mark_Earth_S, 'XData', sx_E+EARTH_dm_S(N1+j,1), 'YData', sy_E+EARTH_dm_S(N1+j,2), 'ZData', sz_E+EARTH_dm_S(N1+j,3));
-%     set(mark_Venus_S, 'XData', sx_V+VENUS_dm_S(N1+j,1), 'YData', sy_V+VENUS_dm_S(N1+j,2), 'ZData', sz_V+VENUS_dm_S(N1+j,3));
-%     set(mark_dm_S, 'XData', Q_dmSE_S(j,1), 'YData', Q_dmSE_S(j,2), 'ZData', Q_dmSE_S(j,3));
+%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', floor((t_all(N1+j)-t_all(1))/3600/24)));
 % 
-%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', (t_all(N1+j)-t_all(1))/3600/24));
+%     if j >= N2-cutoff_SE+5
+%         setAxVisible(axSE, false);
+%     end
 % 
 %     drawnow limitrate;
-% %     set(leg10, 'Units', 'normalized', 'Position', legPos);
-% 
 %     pause(0.1)
-% %     writeVideo(v, getframe(fig10));
+%     % writeVideo(v, getframe(fig10));
 % end
 % N3 = length(t_dc_S);
 % for j = 2:stride:N3
 %     i0 = max(1, j-tailLen);
 % 
-%     set(mark_Moon_SE, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
-%     set(mark_SE, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
-% 
-%     set(hist_dc_S, 'XData', Q_dc_S(i0:j,1), 'YData', Q_dc_S(i0:j,2), 'ZData', Q_dc_S(i0:j,3));
-%     set(mark_Earth_S, 'XData', sx_E+EARTH_dm_S(N1+N2+j,1), 'YData', sy_E+EARTH_dm_S(N1+N2+j,2), 'ZData', sz_E+EARTH_dm_S(N1+N2+j,3));
-%     set(mark_Venus_S, 'XData', sx_V+VENUS_dm_S(N1+N2+j,1), 'YData', sy_V+VENUS_dm_S(N1+N2+j,2), 'ZData', sz_V+VENUS_dm_S(N1+N2+j,3));
+%     set(hist_dc_S, 'XData', Q_dc_S(i0:j,1)./lstarSE, 'YData', Q_dc_S(i0:j,2)./lstarSE, 'ZData', Q_dc_S(i0:j,3)./lstarSE);
+%     set(mark_Earth_S, 'XData', sx_E+EARTH_S(N1+N2+j,1)./lstarSE, 'YData', sy_E+EARTH_S(N1+N2+j,2)./lstarSE, 'ZData', sz_E+EARTH_S(N1+N2+j,3)./lstarSE);
+%     set(mark_Venus_S, 'XData', sx_V+VENUS_S(N1+N2+j,1)./lstarSE, 'YData', sy_V+VENUS_S(N1+N2+j,2)./lstarSE, 'ZData', sz_V+VENUS_S(N1+N2+j,3)./lstarSE);
 %     set(mark_dm_S, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
-%     set(mark_dc_S, 'XData', Q_dc_S(j,1), 'YData', Q_dc_S(j,2), 'ZData', Q_dc_S(j,3));
+%     set(mark_dc_S, 'XData', Q_dc_S(j,1)./lstarSE, 'YData', Q_dc_S(j,2)./lstarSE, 'ZData', Q_dc_S(j,3)./lstarSE);
 % 
-%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', (t_all(N1+N2+j)-t_all(1))/3600/24));
+%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', floor((t_all(N1+N2+j)-t_all(1))/3600/24)));
 % 
 %     drawnow limitrate;
-% %     set(leg10, 'Units', 'normalized', 'Position', legPos);
-% 
 %     pause(0.1)
-% %     writeVideo(v, getframe(fig10));
+%     % writeVideo(v, getframe(fig10));
 % end
 % N4 = length(t_bc_S);
-% set(Deltav1, 'XData', Q_bc_S(1,1), 'YData', Q_bc_S(1,2), 'ZData', Q_bc_S(1,3));
+% set(Deltav1, 'XData', Q_bc_S(1,1)./lstarSE, 'YData', Q_bc_S(1,2)./lstarSE, 'ZData', Q_bc_S(1,3)./lstarSE);
 % for j = 2:stride:N4
 %     i0 = max(1, j-tailLen);
 % 
-%     set(hist_bc_S, 'XData', Q_bc_S(i0:j,1), 'YData', Q_bc_S(i0:j,2), 'ZData', Q_bc_S(i0:j,3));
-%     set(mark_Earth_S, 'XData', sx_E+EARTH_dm_S(N1+N2+N3+j,1), 'YData', sy_E+EARTH_dm_S(N1+N2+N3+j,2), 'ZData', sz_E+EARTH_dm_S(N1+N2+N3+j,3));
-%     set(mark_Venus_S, 'XData', sx_V+VENUS_dm_S(N1+N2+N3+j,1), 'YData', sy_V+VENUS_dm_S(N1+N2+N3+j,2), 'ZData', sz_V+VENUS_dm_S(N1+N2+N3+j,3));
+%     set(hist_bc_S, 'XData', Q_bc_S(i0:j,1)./lstarSE, 'YData', Q_bc_S(i0:j,2)./lstarSE, 'ZData', Q_bc_S(i0:j,3)./lstarSE);
+%     set(mark_Earth_S, 'XData', sx_E+EARTH_S(N1+N2+N3+j,1)./lstarSE, 'YData', sy_E+EARTH_S(N1+N2+N3+j,2)./lstarSE, 'ZData', sz_E+EARTH_S(N1+N2+N3+j,3)./lstarSE);
+%     set(mark_Venus_S, 'XData', sx_V+VENUS_S(N1+N2+N3+j,1)./lstarSE, 'YData', sy_V+VENUS_S(N1+N2+N3+j,2)./lstarSE, 'ZData', sz_V+VENUS_S(N1+N2+N3+j,3)./lstarSE);
 %     set(mark_dc_S, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
-%     set(mark_bc_S, 'XData', Q_bc_S(j,1), 'YData', Q_bc_S(j,2), 'ZData', Q_bc_S(j,3));
+%     set(mark_bc_S, 'XData', Q_bc_S(j,1)./lstarSE, 'YData', Q_bc_S(j,2)./lstarSE, 'ZData', Q_bc_S(j,3)./lstarSE);
 % 
-%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', (t_all(N1+N2+N3+j)-t_all(1))/3600/24));
+%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', floor((t_all(N1+N2+N3+j)-t_all(1))/3600/24)));
 % 
 %     drawnow limitrate;
-% %     set(leg10, 'Units', 'normalized', 'Position', legPos);
-% 
 %     pause(0.1)
-% %     writeVideo(v, getframe(fig10));
+%     % writeVideo(v, getframe(fig10));
 % end
 % N5 = length(t_ac_S);
-% set(Deltav2, 'XData', Q_ac_S(1,1), 'YData', Q_ac_S(1,2), 'ZData', Q_ac_S(1,3));
+% set(Deltav2, 'XData', Q_ac_S(1,1)./lstarSE, 'YData', Q_ac_S(1,2)./lstarSE, 'ZData', Q_ac_S(1,3)./lstarSE);
 % for j = 2:stride:N5
 %     i0 = max(1, j-tailLen);
 % 
-%     set(hist_ac_S, 'XData', Q_ac_S(i0:j,1), 'YData', Q_ac_S(i0:j,2), 'ZData', Q_ac_S(i0:j,3));
-%     set(mark_Earth_S, 'XData', sx_E+EARTH_dm_S(N1+N2+N3+N4+j,1), 'YData', sy_E+EARTH_dm_S(N1+N2+N3+N4+j,2), 'ZData', sz_E+EARTH_dm_S(N1+N2+N3+N4+j,3));
-%     set(mark_Venus_S, 'XData', sx_V+VENUS_dm_S(N1+N2+N3+N4+j,1), 'YData', sy_V+VENUS_dm_S(N1+N2+N3+N4+j,2), 'ZData', sz_V+VENUS_dm_S(N1+N2+N3+N4+j,3));
+%     set(hist_ac_S, 'XData', Q_ac_S(i0:j,1)./lstarSE, 'YData', Q_ac_S(i0:j,2)./lstarSE, 'ZData', Q_ac_S(i0:j,3)./lstarSE);
+%     set(mark_Earth_S, 'XData', sx_E+EARTH_S(N1+N2+N3+N4+j,1)./lstarSE, 'YData', sy_E+EARTH_S(N1+N2+N3+N4+j,2)./lstarSE, 'ZData', sz_E+EARTH_S(N1+N2+N3+N4+j,3)./lstarSE);
+%     set(mark_Venus_S, 'XData', sx_V+VENUS_S(N1+N2+N3+N4+j,1)./lstarSE, 'YData', sy_V+VENUS_S(N1+N2+N3+N4+j,2)./lstarSE, 'ZData', sz_V+VENUS_S(N1+N2+N3+N4+j,3)./lstarSE);
 %     set(mark_bc_S, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
-%     set(mark_ac_S, 'XData', Q_ac_S(j,1), 'YData', Q_ac_S(j,2), 'ZData', Q_ac_S(j,3));
+%     set(mark_ac_S, 'XData', Q_ac_S(j,1)./lstarSE, 'YData', Q_ac_S(j,2)./lstarSE, 'ZData', Q_ac_S(j,3)./lstarSE);
 % 
-%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', (t_all(N1+N2+N3+N4+j)-t_all(1))/3600/24));
+%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', floor((t_all(N1+N2+N3+N4+j)-t_all(1))/3600/24)));
 % 
 %     drawnow limitrate;
-% %     set(leg10, 'Units', 'normalized', 'Position', legPos);
-% 
 %     pause(0.1)
-% %     writeVideo(v, getframe(fig10));
+%     % writeVideo(v, getframe(fig10));
 % end
 % N6 = length(t_am_SV);
 % for j = 2:stride:N6
 %     i0 = max(1, j-tailLen);
 % 
-%     set(hist_am_S, 'XData', Q_am_S(i0:j,1), 'YData', Q_am_S(i0:j,2), 'ZData', Q_am_S(i0:j,3));
-%     set(mark_Earth_S, 'XData', sx_E+EARTH_dm_S(N1+N2+N3+N4+N5+j,1), 'YData', sy_E+EARTH_dm_S(N1+N2+N3+N4+N5+j,2), 'ZData', sz_E+EARTH_dm_S(N1+N2+N3+N4+N5+j,3));
-%     set(mark_Venus_S, 'XData', sx_V+VENUS_dm_S(N1+N2+N3+N4+N5+j,1), 'YData', sy_V+VENUS_dm_S(N1+N2+N3+N4+N5+j,2), 'ZData', sz_V+VENUS_dm_S(N1+N2+N3+N4+N5+j,3));
+%     set(hist_am_S, 'XData', Q_am_S(i0:j,1)./lstarSE, 'YData', Q_am_S(i0:j,2)./lstarSE, 'ZData', Q_am_S(i0:j,3)./lstarSE);
+%     set(mark_Earth_S, 'XData', sx_E+EARTH_S(N1+N2+N3+N4+N5+j,1)./lstarSE, 'YData', sy_E+EARTH_S(N1+N2+N3+N4+N5+j,2)./lstarSE, 'ZData', sz_E+EARTH_S(N1+N2+N3+N4+N5+j,3)./lstarSE);
+%     set(mark_Venus_S, 'XData', sx_V+VENUS_S(N1+N2+N3+N4+N5+j,1)./lstarSE, 'YData', sy_V+VENUS_S(N1+N2+N3+N4+N5+j,2)./lstarSE, 'ZData', sz_V+VENUS_S(N1+N2+N3+N4+N5+j,3)./lstarSE);
 %     set(mark_ac_S, 'XData', NaN, 'YData', NaN, 'ZData', NaN);
-%     set(mark_am_S, 'XData', Q_am_S(j,1), 'YData', Q_am_S(j,2), 'ZData', Q_am_S(j,3));
+%     set(mark_am_S, 'XData', Q_am_S(j,1)./lstarSE, 'YData', Q_am_S(j,2)./lstarSE, 'ZData', Q_am_S(j,3)./lstarSE);
 % 
-%     set(hist_amSV_SV, 'XData', q_am_SV(i0:j,1), 'YData', q_am_SV(i0:j,2), 'ZData', q_am_SV(i0:j,3));
-%     set(mark_SV, 'XData', q_am_SV(j,1), 'YData', q_am_SV(j,2), 'ZData', q_am_SV(j,3));
+%     set(hist_amSV_SV, 'XData', q_am_SV(i0:j,1).*lstarSV./lstarSE, 'YData', q_am_SV(i0:j,2).*lstarSV./lstarSE, 'ZData', q_am_SV(i0:j,3).*lstarSV./lstarSE);
+%     set(mark_SV, 'XData', q_am_SV(j,1).*lstarSV./lstarSE, 'YData', q_am_SV(j,2).*lstarSV./lstarSE, 'ZData', q_am_SV(j,3).*lstarSV./lstarSE);
 % 
-%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', (t_all(N1+N2+N3+N4+N5+j)-t_all(1))/3600/24));
+%     set(tit10, 'String', sprintf('Elapsed Time: %.0f d.', floor((t_all(N1+N2+N3+N4+N5+j)-t_all(1))/3600/24)));
+% 
+%     if j >= cutoff_SV-5
+%         setAxVisible(axSV, true);
+%     end
 % 
 %     drawnow limitrate;
-% %     set(leg10, 'Units', 'normalized', 'Position', legPos);
-% 
 %     pause(0.1)
-% %     writeVideo(v, getframe(fig10));
+%     % writeVideo(v, getframe(fig10));
 % end
 % 
 % % close(v);
+
+%% Functions
+function setAxVisible(ax, tf)
+    vis = matlab.lang.OnOffSwitchState(tf);
+    ax.Visible = vis;
+    set(findall(ax), 'Visible', vis);
+end
+
+function idx = oneRevolution(q)
+    r0 = q(1,1:3)';
+    r_T = q(:,1:3)';
+    n = size(r_T, 2);
+    r1 = r_T(:,2);
+    normal = cross(r0, r1);
+    normal = normal/norm(normal);
+    r = vecnorm(r_T);
+    crosses = cross(repmat(r0, 1, n), r_T);
+    stheta = dot(repmat(normal, 1, n), crosses)./(norm(r0).*r);
+    ctheta = dot(repmat(r0, 1, n), r_T)./(norm(r0).*r);
+    theta = atan2(stheta, ctheta);
+    delta = diff(theta);
+    delta = delta-2*pi.*round(delta./(2*pi));
+    cum = [0, cumsum(delta)];
+    idxEnd = find(cum >= 2*pi, 1);
+    if isempty(idxEnd)
+        idx = size(r, 1);
+    else
+        idx = idxEnd;
+    end
+end

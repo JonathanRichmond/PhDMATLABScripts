@@ -100,6 +100,7 @@ end
 %% Compute arrow directions and locations
 arrows = zeros(numArrows, 4, 2);
 stepSize = round(length(xdata)/numArrows);
+startIx = round(stepSize/2);
 
 % Range of x and y; use to choose size of arrowhead
 xExtent = abs(max(xdata) - min(xdata));
@@ -113,7 +114,7 @@ s = -0.5*l;                 % Distance from base point to bottom (flat edge) of 
 m = 0.33*l;                 % Indent distance from bottom (flat edge) of arrowhead
 
 for n = 1:numArrows
-    ix = (n-1)*stepSize+1;
+    ix = startIx+(n-1)*stepSize;
     
     if(ix > length(xdata))
         break;

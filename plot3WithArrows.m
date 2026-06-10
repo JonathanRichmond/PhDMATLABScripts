@@ -1,6 +1,7 @@
 %%% plot3WithArrows
 %%% Jonathan LeFevre Richmond
 %%% C: 18 February 2026
+%%% U: 2 June 2026
 
 function [plotHandle] = plot3WithArrows(xdata, ydata, zdata, varargin)
 %% Set up Parsing
@@ -65,7 +66,8 @@ end
 %% Compute arrow directions and locations
 numBasePts = 8;
 arrows = struct('tip', cell(1, numArrows), 'basePts', cell(1, numArrows));
-stepSize = round(length(xdata)/(numArrows+1));
+stepSize = round(length(xdata)/(numArrows));
+startIx = round(stepSize/2);
 
 % Range of x and y; use to choose size of arrowhead
 xExtent = abs(max(xdata) - min(xdata));
@@ -79,7 +81,7 @@ w = l;                              % Width of arrowhead
 s = -0.5*l;                         % Distance from base point to bottom (flat edge) of arrowhead
 
 for n = 1:numArrows
-    ix = (n)*stepSize+1;
+    ix = startIx+(n-1)*stepSize;
     
     if(ix > length(xdata))
         break;
