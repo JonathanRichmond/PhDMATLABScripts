@@ -1,9 +1,11 @@
 %%% getColor
 %%% Jonathan LeFevre Richmond
 %%% C: 24 June 2026
+%%% U: 9 July 2026
 
 function color = getColor(colors, value, limits)
 
+value = max(limits(1), min(limits(2), value));
 values = linspace(limits(1), limits(2), 1000);
 i = 1;
 while (i < 1000) && (values(i) < value)
