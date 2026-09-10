@@ -1,7 +1,7 @@
 %%% EscapeCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 16 June 2026
-%%% U: 5 August 2026
+%%% U: 10 September 2026
 
 clear
 
@@ -25,10 +25,12 @@ end
 JC = map.JC;
 disp(primary+"-centered "+grade+" "+apse+" map: JC = "+JC)
 
-n = size(map.flags, 1);
+n = length(map.flags);
 xGrid = map.q(1,:);
 yGrid = map.q(2,:);
-flags = reshape(map.flags, 1, n^2);
+flags = map.flags;
+periapses = map.periapses;
+periapsesIndices = map.periapsesIndices;
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -193,53 +195,104 @@ colorMap(8,:) = [1, 0, 0]; % Impact
 % colorMap(8,:) = [0.78, 0.72, 0.66]; % Impact
 colorMap(9,:) = [0, 0, 0]; % Invalid apse
 colorMap(10,:) = [1, 1, 1]; % ZVC
+% colorMap(10,:) = [0, 0, 0]; % ZVC
+% colorMap(9,:) = [1, 1, 1]; % Invalid apse
+
+%% Import Apse Data
+% apseData = load('../PhDScripts/Output/ApseStatesCR3BP.mat');
+% qOrbit = apseData.qOrbit;
+% tOrbit = apseData.orbitP;
+% initialStates = apseData.initialStates;
+% periStates = apseData.periStates;
+% periTimes = apseData.periTimes;
+% xPeri = periStates(1,:)';
+% yPeri = periStates(2,:)';
+% 
+% trajEscE = apseData.escE;
+% trajEscv = apseData.escv;
+% trajq0 = apseData.q0;
+% trajt1 = apseData.t1;
+% trajDeltav1 = apseData.Deltav1;
+% trajq1 = apseData.q1;
+% trajt2 = apseData.t2;
+% trajDeltav2 = apseData.Deltav2;
+% trajq2 = apseData.q2;
+% trajNewJC = apseData.newJC;
+% trajNewEscE = apseData.newEscE;
+% trajNewEscv = apseData.newEscv;
+% trajPeriStates = apseData.peris;
+% trajApoStates = apseData.apos;
+
+% xTrajSample = 0.192876;
+% yTrajSample = 0.434743;
+% trajIdx = find((abs(xPeri-xTrajSample) < 1E-5) & (abs(yPeri-yTrajSample) < 1E-5))
+% trajIdx = 63 % Indirect
+% trajIdx = 75 % Capture
+% trajIdx = 22 % Capture with option for high-energy maneuver
 
 %% Map
-fig1 = figure("Position", [200 100 1200 750]);
-hold on
-scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
-Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
-scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
-scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
-axis equal
-axis([-1.25 1.25 -1.25 1.25])
-% axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
-xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
-colormap(colorMap(1:6,:))
-cb1 = colorbar;
-clim([-0.5 5.5])
-cb1.Ticks = 0:5;
-cb1.TickLabels = [string(0:4), "5+"];
-ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
-leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-drawnow;
-set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(2)
-hold off
-ax1 = gca;
-ax1.SortMethod = 'childorder';
-% exportgraphics(fig1, 'EscapeCR3BP_1.png', 'BackgroundColor', 'k')
+% fig1 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
+% scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
+% scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
+% % scatter(xPeri, yPeri, 30, 'm', 'filled', 'DisplayName', "Manifold Peris.")
+% % scatter(xPeri(trajIdx), yPeri(trajIdx), 50, 'g', 'filled', 'DisplayName', "Sample")
+% % scatter(sol1.y(1,1), sol1.y(2,1), 50, 'g', 'filled', 'DisplayName', "Sample")
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.2 1-muEM+0.2 -0.2 0.2])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
+% colormap(colorMap(1:6,:))
+% cb1 = colorbar;
+% clim([-0.5 5.5])
+% cb1.Ticks = 0:5;
+% cb1.TickLabels = [string(0:4), "5+"];
+% ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% % ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
+% leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax1 = gca;
+% ax1.SortMethod = 'childorder';
+% % exportgraphics(fig1, 'EscapeCR3BP_1.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig1, 'EscapeCR3BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Propagators
 odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
 odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 
 %% Test Trajectory
-xSample = 0.513527;
-ySample = -0.413327;
-idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
-% idx = 148778
+% xSample = -0.498998;
+% ySample = 0.0661323;
+% idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
+
+% Perigee
+% idx = 46420 % Direct
+% idx = 124010 % Indirect
+% idx = 133530 % Failure
+
+% Prograde apogee
+% idx = 60181 % Failure
+
+% Retrograde apogee
 
 % q = map.q(:,idx);
+% % q = initialStates(:,trajIdx);
 % disp("Sample IC: ["+q(1)+", "+q(2)+", "+q(3)+", "+q(4)+", "+q(5)+", "+q(6)+"]")
 % tau = 2*pi;
 % sol = ode89(odeCR3BPEM, [0 tau], q, odeOpts);
@@ -254,6 +307,12 @@ idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
 % scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
 % scatter3(sol.y(1,1), sol.y(2,1), sol.y(3,1), 50, 'g', 'filled', 'DisplayName', "Start")
 % p21 = plot3WithArrows(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'Color', colorMap(flags(idx)+1,:));
+% % p21 = plot3WithArrows(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'Color', 'm');
+% if flags(idx) > 0
+%     periIndices = find(abs(periapsesIndices-idx) < 1E-5);
+%     peris = periapses(:,periIndices(1):periIndices(end));
+%     scatter3(peris(1,:), peris(2,:), peris(3,:), 50, 'm', 'filled', 'DisplayName', "Periapses")
+% end
 % set(p21, 'DisplayName', "Sample Traj.")
 % axis equal
 % axis([-1.25 1.25 -1.25 1.25])
@@ -265,85 +324,207 @@ idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
 % leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % drawnow;
 % set(leg2.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-% set(gca, 'Color', 'k');
+% set(gca, 'Color', 'w');
 % view(2)
 % hold off
 % ax2 = gca;
 % ax2.SortMethod = 'childorder';
 % % exportgraphics(fig2, 'EscapeCR3BP_2.png','BackgroundColor', 'k')
 
+%% Trajectory Analysis
+% solOrbit = ode89(odeCR3BPEM, [0 tOrbit], qOrbit, odeOpts);
+% 
+% disp("Initial State: ["+trajq0(1)+", "+trajq0(2)+", "+trajq0(3)+", "+trajq0(4)+", "+trajq0(5)+", "+trajq0(6)+"]")
+% disp("Original escape energy:"+trajEscE)
+% disp("Original escape velocity:"+trajEscv)
+% tau = 12*pi;
+% sol = ode89(odeCR3BPEM, [0 periTimes(trajIdx)+tau], initialStates(:,trajIdx), odeOpts);
+% % if trajt1 > 0
+% %     sol0 = ode89(odeCR3BPEM, [0 trajt1], trajq0, odeOpts);
+% % end
+% % disp("Delta-v 1: "+trajDeltav1*1000*lstarEM/tstarEM+" m/s")
+% % disp("Indirect State: ["+trajq1(1)+", "+trajq1(2)+", "+trajq1(3)+", "+trajq1(4)+", "+trajq1(5)+", "+trajq1(6)+"]")
+% % if trajt2 > 0
+% %     sol1 = ode89(odeCR3BPEM, [trajt1 trajt1+trajt2], trajq1, odeOpts);
+% % end
+% % disp("Delta-v 2: "+trajDeltav2*1000*lstarEM/tstarEM+" m/s")
+% % disp("Escape State: ["+trajq2(1)+", "+trajq2(2)+", "+trajq2(3)+", "+trajq2(4)+", "+trajq2(5)+", "+trajq2(6)+"]")
+% % sol2 = ode89(odeCR3BPEM, [trajt1+trajt2 trajt1+trajt2+1.5*pi], trajq2, odeOpts);
+% % disp("New JC: "+trajNewJC)
+% % disp("New escape energy:"+trajNewEscE)
+% % disp("New escape velocity:"+trajNewEscv)
+% % disp("Escape metric:"+(trajNewEscv-trajEscv)/((abs(trajDeltav1)+abs(trajDeltav2))*lstarEM/tstarEM))
+
+% fig13 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% % plot3(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'g:', 'DisplayName', "Orbit")
+% p131 = plot3WithArrows(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'LineType', ':', 'Color', 'g', 'NumArrows', 2, 'ArrowScale', 5);
+% set(p131, 'DisplayName', "Orbit")
+% % plot3(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'm', 'DisplayName', "Orig. Traj.")
+% p132 = plot3WithArrows(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'Color', 'm', 'NumArrows', 10, 'ArrowScale', 1);
+% set(p132, 'DisplayName', "Orig. Traj.")
+% scatter3(trajq0(1), trajq0(2), trajq0(3), 50, 'g', 'o', 'filled', 'DisplayName', "Sample Perigee")
+% % if trajt1 > 0
+% %     % plot3(sol0.y(1,:), sol0.y(2,:), sol0.y(3,:), 'b', 'HandleVisibility', 'off')
+% %     p133 = plot3WithArrows(sol0.y(1,:), sol0.y(2,:), sol0.y(3,:), 'Color', 'b', 'NumArrows', 3, 'ArrowScale', 1.5);
+% %     set(p133, 'HandleVisibility', 'off')
+% % end
+% % if trajt2 > 0
+% %     % plot3(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'b', 'HandleVisibility', 'off')
+% %     p134 = plot3WithArrows(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'Color', 'b', 'NumArrows', 3, 'ArrowScale', 1.5);
+% %     set(p134, 'HandleVisibility', 'off')
+% % end
+% % % plot3(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
+% % p135 = plot3WithArrows(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'Color', 'b', 'NumArrows', 2, 'ArrowScale', 1.5);
+% % set(p135, 'DisplayName', "Assisted Traj.")
+% % if abs(trajDeltav1) > 0
+% %     scatter3(sol1.y(1,1), sol1.y(2,1), sol1.y(3,1), 50, 'w', 's', 'filled', 'DisplayName', "Man. 1")
+% % end
+% % if abs(trajDeltav2) > 0
+% %     scatter3(sol2.y(1,1), sol2.y(2,1), sol2.y(3,1), 50, 'w', '^', 'filled', 'DisplayName', "Man. 2")
+% % end
+% axis equal
+% axis([-1.25 1.25 -1.25 1.25])
+% % axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% grid on
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.", 'Interpreter', 'latex')
+% leg13 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg13.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax13 = gca;
+% ax13.SortMethod = 'childorder';
+% % exportgraphics(fig13, 'EscapeCR3BP_13.png','BackgroundColor', 'k')
+% % exportgraphics(fig13, 'EscapeCR3BP_13.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+
+%% High-Energy Analysis
+% trajApo = trajApoStates(:,9);
+% disp("Initial State: ["+trajApo(1)+", "+trajApo(2)+", "+trajApo(3)+", "+trajApo(4)+", "+trajApo(5)+", "+trajApo(6)+"]")
+% tau = 12*pi;
+% sol = ode89(odeCR3BPEM, [0 tau], trajApo, odeOpts);
+% trajPeri = trajPeriStates(:,9);
+% vMag = norm(trajPeri(4:6));
+% vhat = trajPeri(4:6)./vMag;
+% DeltavHigh = 1000*tstarEM/lstarEM/1000;
+% qHigh1 = trajPeri;
+% qHigh1(4:6) = vhat.*(vMag+DeltavHigh);
+% disp("Delta-v 1: "+DeltavHigh*1000*lstarEM/tstarEM+" m/s")
+% disp("Altered Perigee State: ["+qHigh1(1)+", "+qHigh1(2)+", "+qHigh1(3)+", "+qHigh1(4)+", "+qHigh1(5)+", "+qHigh1(6)+"]")
+% tau1 = 2*pi;
+% sol1 = ode89(odeCR3BPEM, [0 tau1], qHigh1, odeOpts);
+% vMagApo = norm(trajApo(4:6));
+% vhatApo = trajApo(4:6)./vMagApo;
+% DeltavApo = 500*tstarEM/lstarEM/1000;
+% qApo = trajApo;
+% qApo(4:6) = vhatApo.*(vMagApo+DeltavApo);
+% disp("Delta-v Apo: "+DeltavApo*1000*lstarEM/tstarEM+" m/s")
+% disp("Altered Apogee State: ["+qApo(1)+", "+qApo(2)+", "+qApo(3)+", "+qApo(4)+", "+qApo(5)+", "+qApo(6)+"]")
+% tauApo = 0.5*pi;
+% solApo = ode89(odeCR3BPEM, [0 tauApo], qApo, odeOpts);
+% newIdx = 45;
+% trajPeriNew = solApo.y(:,newIdx);
+% vMagNew = norm(trajPeriNew(4:6));
+% vhatNew = trajPeriNew(4:6)./vMagNew;
+% DeltavHighNew = DeltavHigh-DeltavApo;
+% qHigh2 = trajPeriNew;
+% qHigh2(4:6) = vhatNew.*(vMagNew+DeltavHighNew);
+% disp("Delta-v 2: "+DeltavHighNew*1000*lstarEM/tstarEM+" m/s")
+% disp("New Altered Perigee State: ["+qHigh2(1)+", "+qHigh2(2)+", "+qHigh2(3)+", "+qHigh2(4)+", "+qHigh2(5)+", "+qHigh2(6)+"]")
+% tau2 = 2*pi;
+% sol2 = ode89(odeCR3BPEM, [0 tau2], qHigh2, odeOpts);
+
+% fig14 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% % plot3(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'm', 'DisplayName', "Orig. Traj.")
+% p141 = plot3WithArrows(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'Color', 'm', 'NumArrows', 10, 'ArrowScale', 1);
+% set(p141, 'DisplayName', "Orig. Traj.")
+% scatter3(trajApo(1), trajApo(2), trajApo(3), 50, 'r', 'o', 'filled', 'DisplayName', "IC")
+% scatter3(trajPeri(1), trajPeri(2), trajPeri(3), 50, 'g', 'o', 'filled', 'DisplayName', "Sample Peri.")
+% % plot3(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'b', 'DisplayName', "1-Man. Traj.")
+% p142 = plot3WithArrows(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'Color', 'b', 'NumArrows', 3, 'ArrowScale', 0.1);
+% set(p142, 'DisplayName', "1-Man. Traj.")
+% scatter3(sol1.y(1,1), sol1.y(2,1), sol1.y(3,1), 50, 'w', '^', 'filled', 'DisplayName', "Peri. Man.")
+% % plot3(solApo.y(1,:), solApo.y(2,:), solApo.y(3,:), 'g', 'DisplayName', "2-Man. Traj.")
+% p143 = plot3WithArrows(solApo.y(1,1:newIdx), solApo.y(2,1:newIdx), solApo.y(3,1:newIdx), 'Color', 'g', 'NumArrows', 1, 'ArrowScale', 3);
+% set(p143, 'DisplayName', "2-Man. Traj.")
+% % plot3(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'g', 'HandleVisibility', 'off')
+% p144 = plot3WithArrows(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'Color', 'g', 'NumArrows', 2, 'ArrowScale', 0.1);
+% set(p144, 'HandleVisibility', 'off')
+% scatter3(solApo.y(1,1), solApo.y(2,1), solApo.y(3,1), 50, 'w', 's', 'filled', 'DisplayName', "Apo. Man.")
+% scatter3(sol2.y(1,1), sol2.y(2,1), sol2.y(3,1), 50, 'w', '*', 'DisplayName', "New Peri. Man.")
+% axis equal
+% axis([-1.25 1.25 -1.25 1.25])
+% % axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% grid on
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.", 'Interpreter', 'latex')
+% leg14 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg14.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax14 = gca;
+% ax14.SortMethod = 'childorder';
+% % exportgraphics(fig14, 'EscapeCR3BP_14.png','BackgroundColor', 'k')
+
 %% Import Escape Analysis Data
-analysisData = load('../PhDScripts/Output/EscapeAnalysisCR3BP.mat');
-q0s_filt0 = analysisData.esc0q0;
-tfs_filt0 = analysisData.esc0tf;
-Es_filt0 = analysisData.esc0E;
-nFilt0 = length(Es_filt0);
-% esc1q0s = analysisData.esc1q0;
-% esc1tfs = analysisData.esc1tf;
-% esc1Es = analysisData.esc1E;
-% esc1n = length(esc1Es);
-% esc2q0s = analysisData.esc2q0;
-% esc2tfs = analysisData.esc2tf;
-% esc2Es = analysisData.esc2E;
-% esc2n = length(esc2Es);
-
-Deltav2s = analysisData.Deltav2s;
-escEs = analysisData.EscapeEs;
-DeltaEs = analysisData.DeltaEs;
-Deltav2 = analysisData.Deltav2;
+% analysisData = load('../PhDScripts/Output/EscapeAnalysisCR3BP.mat');
+% q0s_filt0 = analysisData.esc0q0;
+% tfs_filt0 = analysisData.esc0tf;
+% Es_filt0 = analysisData.esc0E;
+% ds_filt0 = analysisData.esc0d;
+% nFilt0 = length(Es_filt0);
+% q0s_filt1 = analysisData.esc1q0;
+% tfs_filt1 = analysisData.esc1tf;
+% Es_filt1 = analysisData.esc1E;
+% nFilt1 = length(Es_filt1);
+% E_min = min([Es_filt0; Es_filt1]);
+% E_max = max([Es_filt0; Es_filt1]);
+% d_min = min(ds_filt0);
+% d_max = max(ds_filt0);
+% 
+% % Deltav2s = analysisData.Deltav2s;
+% % escEs = analysisData.EscapeEs;
+% % DeltaEs = analysisData.DeltaEs;
+% 
+% escE = analysisData.escE;
+% escv = analysisData.escv;
 % Deltav1 = analysisData.Deltav1;
-% flybyDistance = analysisData.flybyDistance;
-% qApo = analysisData.ApoState;
-% flagsNew = analysisData.NewFlags;
-
-% norms1 = vecnorm(esc1q0s(1:2,:));
-% mask1 = norms1 < 1;
-% Es_filt1 = esc1Es(mask1);
-% q0s_filt1 = esc1q0s(:, mask1);
-% tfs_filt1 = esc1tfs(mask1);
-% nFilt1 = sum(mask1);
-% clear esc1q0s esc1tfs esc1Es mask1
-% norms2 = vecnorm(esc2q0s(1:2,:));
-% mask2 = norms2 < 1;
-% Es_filt2 = esc2Es(mask2);
-% q0s_filt2 = esc2q0s(:, mask2);
-% tfs_filt2 = esc2tfs(mask2);
-% nFilt2 = sum(mask2);
-% clear esc2q0s esc2tfs esc2Es mask2
-E_min = min(Es_filt0);
-E_max = max(Es_filt0);
-% E_min = min([Es_filt0; Es_filt1; Es_filt2]);
-% E_max = max([Es_filt0; Es_filt1; Es_filt2]);
+% Deltav2 = analysisData.Deltav2;
+% qMan = analysisData.qMan;
+% newJC = analysisData.newJC;
+% newEscE = analysisData.newEscE;
+% newEscv = analysisData.newEscv;
 
 %% Escape Analysis
-% DeltavHs = nan(length(escE1s), 1);
-% r2 = a1SM*lstarSM;
-% parfor j = 1:length(escE1s)
-%     E = escE1s(j);
-%     DeltavHs(j) = abs(sqrt((8*E^2*r2)/(gmS-2*E*r2))-sqrt(-2*E))+abs(sqrt(gmS/r2)-sqrt((2*gmS^2)/(r2*(gmS-2*E*r2))));
-% end
-
 % fig8 = figure("Position", [200 100 1200 750]);
 % hold on
 % scatter(Deltav2s.*1000.*lstarEM./tstarEM, escEs, 20, 'filled', 'HandleVisibility', 'off')
 % % scatter(Deltav2s.*1000.*lstarEM./tstarEM, DeltaEs, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter(Deltav1s.*1000.*lstarEM./tstarEM, DeltavHs, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter(Deltav1s.*1000.*lstarEM./tstarEM, abs(Deltav1s).*lstarEM./tstarEM+DeltavHs, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter(3.15:-0.0025:0.9, abs(Deltav1s).*lstarEM./tstarEM+DeltavHs, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter(Deltav1s.*1000.*lstarEM./tstarEM, hMoons, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter(Deltav1s.*1000.*lstarEM./tstarEM, perids, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter(Deltav1s.*1000.*lstarEM./tstarEM, flagsNew, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter([3.15:-0.0025:0.9, 3.15:-0.0025:0.9], Deltav1s.*1000.*lstarEM./tstarEM, 20, 'filled', 'HandleVisibility', 'off')
-% % scatter([3.15:-0.0025:0.9, 3.15:-0.0025:0.9], flagsNew, 20, 'filled', 'HandleVisibility', 'off')
+% % scatter(Deltav2s.*1000.*lstarEM./tstarEM, flybys, 20, 'filled', 'HandleVisibility', 'off')
 % xlabel("$\Delta v_{2}$ [m/s]", 'Interpreter', 'latex')
 % % xlabel("JC", 'Interpreter', 'latex')
 % ylabel("$\mathcal{E}_{esc}$ [km$^{2}$/s$^{2}$]", 'Interpreter', 'latex')
 % % ylabel("$d\mathcal{E}_{esc}/d\alpha$ [km/s]", 'Interpreter', 'latex')
-% % ylabel("$\Delta v_{H}$ [km/s]", 'Interpreter', 'latex')
-% % ylabel("Total $\Delta v$ [km/s]", 'Interpreter', 'latex')
-% % ylabel("Flyby Alt. [km]", 'Interpreter', 'latex')
-% % ylabel("$\Delta v_{1}$ [m/s]", 'Interpreter', 'latex')
-% % ylabel("Flag", 'Interpreter', 'latex')
+% % ylabel("$r_{p}$ [km]", 'Interpreter', 'latex')
 % title("Maneuver Optimization", 'Interpreter', 'latex')
 % set(gca, 'Color', 'k');
 % view(2)
@@ -353,29 +534,29 @@ E_max = max(Es_filt0);
 % % exportgraphics(fig8, 'EscapeCR3BP_8.png', 'BackgroundColor', 'k')
 
 % qOrig = map.q(:,idx);
-% disp("Original IC: ["+qOrig(1)+", "+qOrig(2)+", "+qOrig(3)+", "+qOrig(4)+", "+qOrig(5)+", "+qOrig(6)+"]")
-% tauOrig = 2*pi;
+% disp("IC: ["+qOrig(1)+", "+qOrig(2)+", "+qOrig(3)+", "+qOrig(4)+", "+qOrig(5)+", "+qOrig(6)+"]")
+% disp("Original escape energy:"+escE)
+% disp("Original escape velocity:"+escv)
+% tauOrig = 12*pi;
 % solOrig = ode89(odeCR3BPEM, [0 tauOrig], qOrig, odeOpts);
 
-% vOrig = norm(qOrig(4:5));
-% vhatOrig = qOrig(4:5)./vOrig;
-% qAssist2 = qOrig;
-% qAssist2(4:5) = (vOrig+Deltav2).*vhatOrig;
+% % % Deltav1
+% % q1 = qMan;
+% % disp("Delta-v 1: "+Deltav1*1000*lstarEM/tstarEM+" m/s")
+% % disp("Maneuver 1 state: ["+q1(1)+", "+q1(2)+", "+q1(3)+", "+q1(4)+", "+q1(5)+", "+q1(6)+"]")
+% % tauAssist1 = 10*pi;
+% % solAssist1 = ode89(odeCR3BPEM, [0 tauAssist1], q1, odeOpts);
+% 
+% % Deltav2
+% q2 = qMan;
 % disp("Delta-v 2: "+Deltav2*1000*lstarEM/tstarEM+" m/s")
-% disp("Assisted IC: ["+qAssist2(1)+", "+qAssist2(2)+", "+qAssist2(3)+", "+qAssist2(4)+", "+qAssist2(5)+", "+qAssist2(6)+"]")
-% % disp("Flyby alt.: "+flybyDistance+" km")
+% disp("Maneuver 2 state: ["+q2(1)+", "+q2(2)+", "+q2(3)+", "+q2(4)+", "+q2(5)+", "+q2(6)+"]")
 % tauAssist2 = 2*pi;
-% solAssist2 = ode89(odeCR3BPEM, [0 tauAssist2], qAssist2, odeOpts);
+% solAssist2 = ode89(odeCR3BPEM, [0 tauAssist2], q2, odeOpts);
 
-% vApo = norm(qApo(4:5));
-% vhatApo = qApo(4:5)./vApo;
-% qAssist2 = qApo;
-% Deltav12 = -1000*tstarEM/lstarEM/1000;
-% qAssist2(4:5) = (vApo+Deltav12).*vhatApo;
-% disp("Delta-v 2: "+Deltav12*1000*lstarEM/tstarEM+" m/s")
-% disp("Assisted IC 2: ["+qAssist2(1)+", "+qAssist2(2)+", "+qAssist2(3)+", "+qAssist2(4)+", "+qAssist2(5)+", "+qAssist2(6)+"]")
-% tauAssist2 = 8*pi;
-% solAssist2 = ode89(odeCR3BPEM, [0 tauAssist2], qAssist2, odeOpts);
+% disp("New JC: "+newJC)
+% disp("New escape energy:"+newEscE)
+% disp("New escape velocity:"+newEscv)
 
 % fig9 = figure("Position", [200 100 1200 750]);
 % hold on
@@ -386,18 +567,19 @@ E_max = max(Es_filt0);
 % scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
 % scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
 % scatter3(solOrig.y(1,1), solOrig.y(2,1), solOrig.y(3,1), 50, 'g', 'filled', 'DisplayName', "Start")
+% % scatter3(qMan(1), qMan(2), qMan(3), 50, 'w', 'filled', '^', 'DisplayName', "Maneuver")
 % % p91 = plot3WithArrows(solOrig.y(1,:), solOrig.y(2,:), solOrig.y(3,:), 'Color', colorMap(flags(idx)+1,:));
 % % set(p91, 'DisplayName', "Original Traj.")
 % plot3(solOrig.y(1,:), solOrig.y(2,:), solOrig.y(3,:), 'Color', colorMap(flags(idx)+1,:), 'DisplayName', "Original Traj.")
-% % p92 = plot3WithArrows(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b');
-% % set(p92, 'DisplayName', "Assisted Traj. 1")
+% % % p92 = plot3WithArrows(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b');
+% % % set(p92, 'DisplayName', "Assisted Traj.")
+% % plot3(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
+% % p93 = plot3WithArrows(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'b');
+% % set(p93, 'DisplayName', "Assisted Traj.")
 % plot3(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
-% % % p93 = plot3WithArrows(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'g');
-% % % set(p93, 'DisplayName', "Assisted Traj. 2")
-% % plot3(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'g', 'DisplayName', "Assisted Traj. 2")
 % axis equal
-% % axis([-1.25 1.25 -1.25 1.25])
-% axis([-3 3 -3 3])
+% axis([-1.25 1.25 -1.25 1.25])
+% % axis([-3 3 -3 3])
 % grid on
 % xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
 % ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
@@ -423,16 +605,16 @@ E_max = max(Es_filt0);
 % 
 % fig11 = figure("Position", [200 100 1200 750]);
 % hold on
-% for j = 1:nFilt0
-%     q = q0s_filt0(:,j);
-%     tau = tfs_filt0(j);
-%     [~, rout] = mexCR3BP(q, [0 tau], muEM, 1E-12, 1E-12, 1E-10);
-%     if clusters(j) == cluster
-%         plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [clusterColor(cluster,:), 0.1], 'LineWidth', 1, 'HandleVisibility', 'off')
-%     else
-%         plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [0.5, 0.5, 0.5, 0.05], 'LineWidth', 1, 'HandleVisibility', 'off')
-%     end
-% end
+% % for j = 1:nFilt0
+% %     q = q0s_filt0(:,j);
+% %     tau = tfs_filt0(j);
+% %     [~, rout] = mexCR3BP(q, [0 tau], muEM, 1E-12, 1E-12, 1E-10);
+% %     if clusters(j) == cluster
+% %         plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [clusterColor(cluster,:), 0.1], 'LineWidth', 1, 'HandleVisibility', 'off')
+% %     % else
+% %         % plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [0.5, 0.5, 0.5, 0.05], 'LineWidth', 1, 'HandleVisibility', 'off')
+% %     end
+% % end
 % scatter(q0s_filt0(1,:), q0s_filt0(2,:), 1.75, clusterColor(clusters,:), 'filled', 'HandleVisibility', 'off')
 % Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
 % set(Earth, 'DisplayName', "Earth")
@@ -451,7 +633,7 @@ E_max = max(Es_filt0);
 % clim([0.5 double(k)+0.5])
 % cb11.Ticks = 1:k;
 % ylabel(cb11, "Clusters", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb11.Label.Position = cb11.Label.Position+[-1.5 4.5 0];
+% cb11.Label.Position = cb11.Label.Position+[-1.5 double(k)/2 0];
 % leg11 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % leg11.Position = leg11.Position+[0.08 0 0 0];
 % drawnow;
@@ -464,15 +646,20 @@ E_max = max(Es_filt0);
 % % exportgraphics(fig11, 'EscapeCR3BP_11.png','BackgroundColor', 'k')
 
 %% Escape Analysis Figure
+% nFilt = nFilt1;
+% qs = q0s_filt1;
+% Es = Es_filt1;
+% tfs = tfs_filt1;
+
 % colors = nebula(1000);
-% pointColors0 = zeros(nFilt0, 3);
-% parfor j = 1:nFilt0
-%     pointColors0(j,:) = getColor(colors, Es_filt0(j), [E_min, E_max]);
-% end
-% % pointColors1 = zeros(nFilt1, 3);
-% % parfor j = 1:nFilt1
-% %     pointColors1(j,:) = getColor(colors, Es_filt1(j), [E_min, E_max]);
+% % pointColors = zeros(nFilt0, 3);
+% % parfor j = 1:nFilt0
+% %     pointColors(j,:) = getColor(colors, ds_filt0(j), [0, ceil(d_max/10000)*10000]);
 % % end
+% pointColors = zeros(nFilt, 3);
+% parfor j = 1:nFilt
+%     pointColors(j,:) = getColor(colors, Es(j), [E_min, E_max]);
+% end
 % % pointColors2 = zeros(nFilt2, 3);
 % % parfor j = 1:nFilt2
 % %     pointColors2(j,:) = getColor(colors, Es_filt2(j), [E_min, E_max]);
@@ -480,20 +667,18 @@ E_max = max(Es_filt0);
 
 % fig5 = figure("Position", [200 100 1200 750]);
 % hold on
-% % for j = 1:nFilt0
-% %     if clusters(j) == cluster
-% %         q = q0s_filt0(:,j);
-% %         tau = tfs_filt0(j);
+% % for j = 1:nFilt
+% %     % if clusters(j) == cluster
+% %         q = qs(:,j);
+% %         tau = tfs(j);
 % %         [~, rout] = mexCR3BP(q, [0 tau], muEM, 1E-12, 1E-12, 1E-10);
 % %         % plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [0.5, 0.5, 0.5, 0.1], 'LineWidth', 1, 'HandleVisibility', 'off')
-% %         plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [pointColors0(j,:), 0.1], 'LineWidth', 1, 'HandleVisibility', 'off')
-% %         scatter3(rout(1,1), rout(1,2), rout(1,3), 1.75, clusterColor(cluster,:), 'filled', 'HandleVisibility', 'off')
-% %     end
+% %         plot3(rout(:,1), rout(:,2), rout(:,3), 'Color', [pointColors(j,:), 0.1], 'LineWidth', 1, 'HandleVisibility', 'off')
+% %         % scatter3(rout(1,1), rout(1,2), rout(1,3), 1.75, clusterColor(cluster,:), 'filled', 'HandleVisibility', 'off')
+% %     % end
 % % end
 % % scatter3(q0s_filt0(1,:), q0s_filt0(2,:), q0s_filt0(3,:), 1.75, color, 'filled', 'HandleVisibility', 'off')
-% scatter3(q0s_filt0(1,:), q0s_filt0(2,:), q0s_filt0(3,:), 1.75, pointColors0, 'filled', 'HandleVisibility', 'off')
-% % scatter3(q0s_filt1(1,:), q0s_filt1(2,:), q0s_filt1(3,:), 1.75, pointColors1, 'filled', 'HandleVisibility', 'off')
-% % scatter3(q0s_filt2(1,:), q0s_filt2(2,:), q0s_filt2(3,:), 1.75, pointColors2, 'filled', 'HandleVisibility', 'off')
+% scatter3(qs(1,:), qs(2,:), qs(3,:), 1.75, pointColors, 'filled', 'HandleVisibility', 'off')
 % Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
 % set(Earth, 'DisplayName', "Earth")
 % Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
@@ -510,7 +695,11 @@ E_max = max(Es_filt0);
 % cb5 = colorbar;
 % clim([E_min E_max])
 % ylabel(cb5, "$\mathcal{E}_{esc}$ [km$^{2}$/s$^{2}$]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb5.Label.Position = cb5.Label.Position+[-3.5 0.102 0];
+% cb5.Label.Position = cb5.Label.Position+[-3.5 0.135 0];
+% % clim([0 ceil(d_max/10000)])
+% % cb5.Ticks = 0:1:ceil(d_max/10000);
+% % ylabel(cb5, "Perilune [km x$10^{4}$]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% % cb5.Label.Position = cb5.Label.Position+[-2 4.1 0];
 % leg5 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % leg5.Position = leg5.Position+[0.08 0 0 0];
 % drawnow;
@@ -523,15 +712,16 @@ E_max = max(Es_filt0);
 % % exportgraphics(fig5, 'EscapeCR3BP_5.png','BackgroundColor', 'k')
 
 %% Import JC Volume Data
-% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_1_peri_pro_500_0.9_3.15.mat';
-% volumeDataFile = 'CR3BPJCVolume_1_peri_pro_500_0.9_3.15.mat';
+% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_1_apo_pro_500_2.9_3.17.mat';
+% volumeDataFile = 'CR3BPJCVolume_1_apo_pro_500_2.9_3.17.mat';
 
 % volumeFields = who('-file', volumeFile);
 % nVolume = length(volumeFields);
 % sampleData = load(volumeFile, volumeFields{1});
 % sampleFields = fieldnames(sampleData);
 % sampleMap = sampleData.(sampleFields{1});
-% nSample = size(sampleMap.flags, 1);
+% rSample = size(sampleMap.flags, 1);
+% cSample = size(sampleMap.flags, 2);
 % mixedJCVolume = zeros(nVolume, 1);
 % parfor j = 1:nVolume
 %     volumeData = load(volumeFile, volumeFields{j});
@@ -542,15 +732,15 @@ E_max = max(Es_filt0);
 % [JCVolume, sortJCIdx] = sort(mixedJCVolume, 'descend');
 % clear mixedJCVolume
 % sortedFields = volumeFields(sortJCIdx);
-% countsVolume = zeros(nVolume, nSample^2);
-% flagsVolume = zeros(nVolume, nSample^2);
-% qVolume = zeros(6, nSample^2, nVolume);
+% countsVolume = zeros(nVolume, rSample, cSample);
+% flagsVolume = zeros(nVolume, rSample, cSample);
+% qVolume = zeros(6, rSample*cSample, nVolume);
 % parfor j = 1:nVolume
 %     volumeData = load(volumeFile, sortedFields{j});
 %     volumeDataFields = fieldnames(volumeData);
 %     volumeMap = volumeData.(volumeDataFields{1});
-%     countsVolume(j,:) = reshape(volumeMap.counts, 1, nSample^2);
-%     flagsVolume(j,:) = reshape(volumeMap.flags, 1, nSample^2);
+%     countsVolume(j,:) = reshape(volumeMap.counts, 1, rSample, cSample);
+%     flagsVolume(j,:) = reshape(volumeMap.flags, 1, rSample, cSample);
 %     qVolume(:,:,j) = volumeMap.q;
 % end
 
@@ -560,7 +750,7 @@ E_max = max(Es_filt0);
 %% Load JC Volume Data
 % load(volumeDataFile, "JCVolume", "flagsVolume", "qVolume");
 % nVolume = length(JCVolume);
-% nSample = sqrt(size(flagsVolume, 2));
+% nSample = size(qVolume, 2);
 % disp("Successfully loaded volume data from MAT file!")
 
 %% JC Animation
@@ -582,12 +772,12 @@ E_max = max(Es_filt0);
 % 
 % % scatSize = 1.75;
 % scatSize = 7.5;
-% hist3 = scatter(NaN(1, nSample^2), NaN(1, nSample^2), scatSize, repmat(colorMap(7,:), nSample^2, 1), 'filled', 'HandleVisibility', 'off');
+% hist3 = scatter(NaN(1, nSample), NaN(1, nSample), scatSize, repmat(colorMap(7,:), nSample, 1), 'filled', 'HandleVisibility', 'off');
 % 
 % % xlim(ax3, [-1.25 1.25])
 % % ylim(ax3, [-1.25 1.25])
-% xlim(ax3, [1-muEM-0.3 1-muEM+0.3])
-% ylim(ax3, [-0.3 0.3])
+% xlim(ax3, [1-muEM-0.2 1-muEM+0.2])
+% ylim(ax3, [-0.2 0.2])
 % 
 % scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
 % scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
@@ -600,12 +790,12 @@ E_max = max(Es_filt0);
 % ylabel(cb3, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 % cb3.Label.Position = cb3.Label.Position+[-2.3 3.1 0];
 % leg3 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% % drawnow;
+% drawnow;
 % % set(leg3.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
 % 
 % tit3 = annotation(fig3, 'textbox', [0.4 0.93 0.2 0.06], 'String', sprintf('JC = %.4f', JCVolume(1)), 'FontName', 'Times New Roman', 'FontSize', 18, 'Color', 'w', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle');
 % 
-% % v = VideoWriter('EscapeCR3BP_JCVolume_Moon_peri_retro.mp4', 'MPEG-4');
+% % v = VideoWriter('EscapeCR3BP_JCVolume_Moon_peri_pro.mp4', 'MPEG-4');
 % % v.FrameRate = 40;
 % % v.Quality = 100;
 % % open(v);
@@ -666,176 +856,77 @@ E_max = max(Es_filt0);
 % % exportgraphics(fig4, 'EscapeCR3BP_4.png', 'BackgroundColor', 'k')
 
 %% Import Assisted Escape Analysis Data
-assistedData = load('../PhDScripts/Output/AssistedEscapeAnalysisCR3BP.mat');
-assistDeltav1s = assistedData.Deltav1s;
-assistDeltav2s = assistedData.Deltav2s;
-totalDeltavs = assistDeltav1s+assistDeltav2s;
-% maneuverMetrics = assistedData.maneuverMetrics;
-
-%% 0-Assisted Escape Figure
-% DeltavColors = rdbuInvert(1000);
-% maxDeltav = 100;
-% pointColors = zeros(length(Deltav0s), 3);
-% parfor j = 1:n^2
-%     if ~isnan(Deltav0s(j))
-%         pointColors(j,:) = getColor(DeltavColors, Deltav0s(j)*1000*lstarEM/tstarEM, [-maxDeltav, maxDeltav]);
-%     else
-%         pointColors(j,:) = [1, 1, 1];
-%     end
-% end
-% 
-% fig6 = figure("Position", [200 100 1200 750]);
-% hold on
-% scatter(xGrid, yGrid, 1.75, pointColors, 'filled', 'HandleVisibility', 'off')
-% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-% set(Earth, 'DisplayName', "Earth")
-% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-% set(Moon, 'DisplayName', "Moon")
-% scatter(nan, nan, 1.75, 'w', 'filled', 'DisplayName', "Infeasible")
-% axis equal
-% axis([-1.25 1.25 -1.25 1.25])
-% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
-% colormap(rdbuInvert)
-% cb6 = colorbar;
-% clim([-maxDeltav maxDeltav])
-% cb6.Ticks = -maxDeltav:50:maxDeltav;
-% cb6.TickLabels = [string(-maxDeltav)+"+", string(-(maxDeltav-50):50:maxDeltav-50), string(maxDeltav)+"+"];
-% ylabel(cb6, "$\Delta v$ [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb6.Label.Position = cb6.Label.Position+[-3.75 103 0];
-% leg6 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% leg6.Position = leg6.Position+[0.1 0 0 0];
-% drawnow;
-% set(leg6.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-% set(gca, 'Color', 'k');
-% view(2)
-% hold off
-% ax6 = gca;
-% ax6.SortMethod = 'childorder';
-% % exportgraphics(fig6, 'EscapeCR3BP_6.png','BackgroundColor', 'k')
-
-%% 1-Assisted Escape Figure
-% pointColors = zeros(length(Deltav1s), 3);
-
-% DeltavColors = rdbuInvert(1000);
-% maxDeltav = 30;
-% parfor j = 1:n^2
-%     if isnan(Deltav1s(j))
-%         pointColors(j,:) = [1, 1, 1];
-%     else
-%         pointColors(j,:) = getColor(DeltavColors, Deltav1s(j)*1000*lstarEM/tstarEM, [-maxDeltav, maxDeltav]);        
-%     end
-% end
-
-% DeltavColors = copper(1000);
-% maxDeltav = 250;
-% parfor j = 1:n^2
-%     if isnan(maneuverMetrics(j))
-%         pointColors(j,:) = [1, 1, 1];
-%     else
-%         pointColors(j,:) = getColor(DeltavColors, maneuverMetrics(j)*1000, [0, maxDeltav]);        
-%     end
-% end
-
-% fig10 = figure("Position", [200 100 1200 750]);
-% hold on
-% scatter(xGrid, yGrid, 1.75, pointColors, 'filled', 'HandleVisibility', 'off')
-% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-% set(Earth, 'DisplayName', "Earth")
-% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-% set(Moon, 'DisplayName', "Moon")
-% scatter(nan, nan, 1.75, 'w', 'filled', 'DisplayName', "Infeasible")
-% axis equal
-% axis([-1.25 1.25 -1.25 1.25])
-% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
-% colormap(rdbuInvert)
-% cb10 = colorbar;
-% clim([-maxDeltav maxDeltav])
-% cb10.Ticks = -maxDeltav:10:maxDeltav;
-% cb10.TickLabels = [string(-maxDeltav)+"+", string(-(maxDeltav-10):10:maxDeltav-10), string(maxDeltav)+"+"];
-% ylabel(cb10, "$\Delta v$ [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb10.Label.Position = cb10.Label.Position+[-3 31 0];
-% % colormap(copper)
-% % cb10 = colorbar;
-% % clim([0 maxDeltav])
-% % cb10.Ticks = 0:50:maxDeltav;
-% % cb10.TickLabels = [0:50:maxDeltav-50, string(maxDeltav)+"+"];
-% % ylabel(cb10, "$\Delta v$ Saved [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% % cb10.Label.Position = cb10.Label.Position+[-3 130 0];
-% leg10 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% leg10.Position = leg10.Position+[0.1 0 0 0];
-% drawnow;
-% set(leg10.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-% set(gca, 'Color', 'k');
-% view(2)
-% hold off
-% ax10 = gca;
-% ax10.SortMethod = 'childorder';
-% % exportgraphics(fig10, 'EscapeCR3BP_10.png','BackgroundColor', 'k')
+% assistedData = load('../PhDScripts/Output/AssistedEscapeAnalysisCR3BP.mat');
+% assistDeltav1s = assistedData.Deltav1s;
+% assistDeltav2s = assistedData.Deltav2s;
+% assistJCs = assistedData.newJCs;
+% totalDeltavs = assistDeltav1s+assistDeltav2s;
 
 %% Assisted Escape Figure
-pointColors = zeros(length(totalDeltavs), 3);
-
-DeltavColors = rdbuInvert(1000);
-maxDeltav = round(max(abs(totalDeltavs))*1000*lstarEM/tstarEM, 1, 'significant');
-parfor j = 1:n^2
-    if isnan(totalDeltavs(j))
-        pointColors(j,:) = [1, 1, 1];
-    else
-        pointColors(j,:) = getColor(DeltavColors, totalDeltavs(j)*1000*lstarEM/tstarEM, [-maxDeltav, maxDeltav]);        
-    end
-end
-
-% DeltavColors = copper(1000);
-% maxDeltav = 250;
-% parfor j = 1:n^2
-%     if isnan(maneuverMetrics(j))
+% pointColors = zeros(length(totalDeltavs), 3);
+% DeltavColors = rdbuInvert(1000);
+% % DeltavColors = rdbu(1000);
+% maxDeltav = 30;
+% parfor j = 1:n
+%     if isnan(totalDeltavs(j))
 %         pointColors(j,:) = [1, 1, 1];
+%         % pointColors(j,:) = [0, 0, 0];
 %     else
-%         pointColors(j,:) = getColor(DeltavColors, maneuverMetrics(j)*1000, [0, maxDeltav]);        
+%         pointColors(j,:) = getColor(DeltavColors, totalDeltavs(j)*1000*lstarEM/tstarEM, [-maxDeltav, maxDeltav]);        
 %     end
 % end
+% % DeltavColors = copper(1000);
+% % maxDeltav = 250;
+% % parfor j = 1:n^2
+% %     if isnan(maneuverMetrics(j))
+% %         pointColors(j,:) = [1, 1, 1];
+% %     else
+% %         pointColors(j,:) = getColor(DeltavColors, maneuverMetrics(j)*1000, [0, maxDeltav]);        
+% %     end
+% % end
 
-fig12 = figure("Position", [200 100 1200 750]);
-hold on
-scatter(xGrid, yGrid, 1.75, pointColors, 'filled', 'HandleVisibility', 'off')
-Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-scatter(nan, nan, 1.75, 'w', 'filled', 'DisplayName', "Infeasible")
-axis equal
-axis([-1.25 1.25 -1.25 1.25])
-xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
-colormap(rdbuInvert)
-cb12 = colorbar;
-clim([-maxDeltav maxDeltav])
-cb12.Ticks = -maxDeltav:10:maxDeltav;
-cb12.TickLabels = [string(-maxDeltav)+"+", string(-(maxDeltav-10):10:maxDeltav-10), string(maxDeltav)+"+"];
-ylabel(cb12, "$\Delta v_{2}$ [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-cb12.Label.Position = cb12.Label.Position+[-3 51 0];
-% colormap(copper)
+% fig12 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, pointColors, 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 1.75, 'w', 'filled', 'DisplayName', "Infeasible")
+% % scatter(xPeri, yPeri, 30, 'm', 'filled', 'DisplayName', "Manifold Peris.")
+% % scatter3(sol2.y(1,1), sol2.y(2,1), sol2.y(3,1), 10, 'w', '^', 'filled', 'HandleVisibility', 'off')
+% % scatter3([xPeri(trajIdx), trajPeriStates(1,9)], [yPeri(trajIdx), trajPeriStates(2,9)], [0, trajPeriStates(3,9)], 10, 'w', '^', 'filled', 'HandleVisibility', 'off')
+% axis equal
+% axis([-1.25 1.25 -1.25 1.25])
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
+% colormap(rdbuInvert)
+% % colormap(rdbu)
 % cb12 = colorbar;
-% clim([0 maxDeltav])
-% cb12.Ticks = 0:50:maxDeltav;
-% cb12.TickLabels = [0:50:maxDeltav-50, string(maxDeltav)+"+"];
-% ylabel(cb12, "$\Delta v$ Saved [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb12.Label.Position = cb12.Label.Position+[-3 130 0];
-leg12 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-leg12.Position = leg12.Position+[0.1 0 0 0];
-drawnow;
-set(leg12.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(2)
-hold off
-ax12 = gca;
-ax12.SortMethod = 'childorder';
-% exportgraphics(fig12, 'EscapeCR3BP_12.png','BackgroundColor', 'k')
+% clim([-maxDeltav maxDeltav])
+% cb12.Ticks = -maxDeltav:10:maxDeltav;
+% cb12.TickLabels = [string(-maxDeltav)+"+", string(-(maxDeltav-10):10:maxDeltav-10), string(maxDeltav)+"+"];
+% ylabel(cb12, "$\Delta v$ [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb12.Label.Position = cb12.Label.Position+[-3 31 0];
+% % colormap(copper)
+% % cb12 = colorbar;
+% % clim([0 maxDeltav])
+% % cb12.Ticks = 0:50:maxDeltav;
+% % cb12.TickLabels = [0:50:maxDeltav-50, string(maxDeltav)+"+"];
+% % ylabel(cb12, "$\Delta v$ Saved [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% % cb12.Label.Position = cb12.Label.Position+[-3 130 0];
+% leg12 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% leg12.Position = leg12.Position+[0.1 0 0 0];
+% drawnow;
+% set(leg12.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax12 = gca;
+% ax12.SortMethod = 'childorder';
+% % exportgraphics(fig12, 'EscapeCR3BP_12.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig12, 'EscapeCR3BP_12.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Test Trajectory
 % xSample = 0.0125251;
