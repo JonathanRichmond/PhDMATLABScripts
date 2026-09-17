@@ -1,7 +1,7 @@
 %%% EscapeCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 16 June 2026
-%%% U: 10 September 2026
+%%% U: 17 September 2026
 
 clear
 
@@ -137,6 +137,7 @@ b4SE = sqrt(3)/2;
 b5SE = -b4SE;
 
 RSoIE = 0.09877*lstarSE; % Earth sphere of influence radius [km]
+rHill = 3.8897077389538994; % Earth Hill sphere radius
 
 %% Sun-Mars Data
 gmM = 4.282837362069909E4; % Mars gravitational parameter [km^3/s^2]
@@ -223,12 +224,12 @@ colorMap(10,:) = [1, 1, 1]; % ZVC
 % trajPeriStates = apseData.peris;
 % trajApoStates = apseData.apos;
 
-% xTrajSample = 0.192876;
-% yTrajSample = 0.434743;
-% trajIdx = find((abs(xPeri-xTrajSample) < 1E-5) & (abs(yPeri-yTrajSample) < 1E-5))
-% trajIdx = 63 % Indirect
-% trajIdx = 75 % Capture
-% trajIdx = 22 % Capture with option for high-energy maneuver
+% % xTrajSample = -0.0650211;
+% % yTrajSample = 0.208377;
+% % trajIdx = find((abs(xPeri-xTrajSample) < 1E-5) & (abs(yPeri-yTrajSample) < 1E-5))
+% % trajIdx = 63 % Indirect
+% trajIdx = 99 % Capture
+% % trajIdx = 22 % Capture with option for high-energy maneuver
 
 %% Map
 % fig1 = figure("Position", [200 100 1200 750]);
@@ -243,7 +244,9 @@ colorMap(10,:) = [1, 1, 1]; % ZVC
 % scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
 % % scatter(xPeri, yPeri, 30, 'm', 'filled', 'DisplayName', "Manifold Peris.")
 % % scatter(xPeri(trajIdx), yPeri(trajIdx), 50, 'g', 'filled', 'DisplayName', "Sample")
-% % scatter(sol1.y(1,1), sol1.y(2,1), 50, 'g', 'filled', 'DisplayName', "Sample")
+% % scatter(sol1.y(1,1), sol1.y(2,1), 50, 'c', 'filled', 'HandleVisibility', 'off')
+% % scatter(sol2.y(1,1), sol2.y(2,1), 50, 'c', 'filled', 'HandleVisibility', 'off')
+% % scatter3(trajPeriStates(1,:), trajPeriStates(2,:), trajPeriStates(3,:), 50, 'c', 'o', 'filled', 'HandleVisibility', 'off')
 % axis equal
 % if primary == "Moon"
 %     axis([1-muEM-0.2 1-muEM+0.2 -0.2 0.2])
@@ -277,19 +280,12 @@ odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
 odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 
 %% Test Trajectory
-% xSample = -0.498998;
-% ySample = 0.0661323;
+% xSample = -0.158317;
+% ySample = 0.102204;
 % idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
-
-% Perigee
 % idx = 46420 % Direct
 % idx = 124010 % Indirect
 % idx = 133530 % Failure
-
-% Prograde apogee
-% idx = 60181 % Failure
-
-% Retrograde apogee
 
 % q = map.q(:,idx);
 % % q = initialStates(:,trajIdx);
@@ -333,27 +329,25 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 
 %% Trajectory Analysis
 % solOrbit = ode89(odeCR3BPEM, [0 tOrbit], qOrbit, odeOpts);
-% 
 % disp("Initial State: ["+trajq0(1)+", "+trajq0(2)+", "+trajq0(3)+", "+trajq0(4)+", "+trajq0(5)+", "+trajq0(6)+"]")
-% disp("Original escape energy:"+trajEscE)
-% disp("Original escape velocity:"+trajEscv)
+% disp("Original departure energy:"+trajEscE)
+% disp("Original departure velocity:"+trajEscv)
 % tau = 12*pi;
 % sol = ode89(odeCR3BPEM, [0 periTimes(trajIdx)+tau], initialStates(:,trajIdx), odeOpts);
-% % if trajt1 > 0
-% %     sol0 = ode89(odeCR3BPEM, [0 trajt1], trajq0, odeOpts);
-% % end
-% % disp("Delta-v 1: "+trajDeltav1*1000*lstarEM/tstarEM+" m/s")
-% % disp("Indirect State: ["+trajq1(1)+", "+trajq1(2)+", "+trajq1(3)+", "+trajq1(4)+", "+trajq1(5)+", "+trajq1(6)+"]")
-% % if trajt2 > 0
-% %     sol1 = ode89(odeCR3BPEM, [trajt1 trajt1+trajt2], trajq1, odeOpts);
-% % end
-% % disp("Delta-v 2: "+trajDeltav2*1000*lstarEM/tstarEM+" m/s")
-% % disp("Escape State: ["+trajq2(1)+", "+trajq2(2)+", "+trajq2(3)+", "+trajq2(4)+", "+trajq2(5)+", "+trajq2(6)+"]")
-% % sol2 = ode89(odeCR3BPEM, [trajt1+trajt2 trajt1+trajt2+1.5*pi], trajq2, odeOpts);
-% % disp("New JC: "+trajNewJC)
-% % disp("New escape energy:"+trajNewEscE)
-% % disp("New escape velocity:"+trajNewEscv)
-% % disp("Escape metric:"+(trajNewEscv-trajEscv)/((abs(trajDeltav1)+abs(trajDeltav2))*lstarEM/tstarEM))
+% sol0 = ode89(odeCR3BPEM, [0 periTimes(trajIdx)+trajt1], initialStates(:,trajIdx), odeOpts);
+% disp("Delta-v 1: "+trajDeltav1*1000*lstarEM/tstarEM+" m/s")
+% disp("Indirect State: ["+trajq1(1)+", "+trajq1(2)+", "+trajq1(3)+", "+trajq1(4)+", "+trajq1(5)+", "+trajq1(6)+"]")
+% if trajt2 > 0
+%     sol1 = ode89(odeCR3BPEM, [trajt1 trajt1+trajt2], trajq1, odeOpts);
+% end
+% sol15 = ode89(odeCR3BPEM, [trajt1 trajt1+trajt2+1.5*pi], trajq1, odeOpts);
+% disp("Delta-v 2: "+trajDeltav2*1000*lstarEM/tstarEM+" m/s")
+% disp("Escape State: ["+trajq2(1)+", "+trajq2(2)+", "+trajq2(3)+", "+trajq2(4)+", "+trajq2(5)+", "+trajq2(6)+"]")
+% sol2 = ode89(odeCR3BPEM, [trajt1+trajt2 trajt1+trajt2+3*pi], trajq2, odeOpts);
+% disp("New JC: "+trajNewJC)
+% disp("New departure energy:"+trajNewEscE)
+% disp("New departure velocity:"+trajNewEscv)
+% disp("Departure metric:"+(trajNewEscv-trajEscv)/((abs(trajDeltav1)+abs(trajDeltav2))*lstarEM/tstarEM))
 
 % fig13 = figure("Position", [200 100 1200 750]);
 % hold on
@@ -363,34 +357,37 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % set(Moon, 'DisplayName', "Moon")
 % scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
 % scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% plot3(rHill.*cos(linspace(0, 2*pi, 1001)), rHill.*sin(linspace(0, 2*pi, 1001)), zeros(1,1001), 'w:', 'DisplayName', "Hills Sphere")
 % % plot3(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'g:', 'DisplayName', "Orbit")
 % p131 = plot3WithArrows(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'LineType', ':', 'Color', 'g', 'NumArrows', 2, 'ArrowScale', 5);
 % set(p131, 'DisplayName', "Orbit")
 % % plot3(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'm', 'DisplayName', "Orig. Traj.")
 % p132 = plot3WithArrows(sol.y(1,:), sol.y(2,:), sol.y(3,:), 'Color', 'm', 'NumArrows', 10, 'ArrowScale', 1);
 % set(p132, 'DisplayName', "Orig. Traj.")
-% scatter3(trajq0(1), trajq0(2), trajq0(3), 50, 'g', 'o', 'filled', 'DisplayName', "Sample Perigee")
-% % if trajt1 > 0
-% %     % plot3(sol0.y(1,:), sol0.y(2,:), sol0.y(3,:), 'b', 'HandleVisibility', 'off')
-% %     p133 = plot3WithArrows(sol0.y(1,:), sol0.y(2,:), sol0.y(3,:), 'Color', 'b', 'NumArrows', 3, 'ArrowScale', 1.5);
-% %     set(p133, 'HandleVisibility', 'off')
-% % end
-% % if trajt2 > 0
-% %     % plot3(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'b', 'HandleVisibility', 'off')
-% %     p134 = plot3WithArrows(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'Color', 'b', 'NumArrows', 3, 'ArrowScale', 1.5);
-% %     set(p134, 'HandleVisibility', 'off')
-% % end
-% % % plot3(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
-% % p135 = plot3WithArrows(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'Color', 'b', 'NumArrows', 2, 'ArrowScale', 1.5);
-% % set(p135, 'DisplayName', "Assisted Traj.")
-% % if abs(trajDeltav1) > 0
-% %     scatter3(sol1.y(1,1), sol1.y(2,1), sol1.y(3,1), 50, 'w', 's', 'filled', 'DisplayName', "Man. 1")
-% % end
-% % if abs(trajDeltav2) > 0
-% %     scatter3(sol2.y(1,1), sol2.y(2,1), sol2.y(3,1), 50, 'w', '^', 'filled', 'DisplayName', "Man. 2")
-% % end
+% % scatter(sol1.y(1,1), sol1.y(2,1), 50, 'c', 'filled', 'HandleVisibility', 'off')
+% % scatter3(trajPeriStates(1,:), trajPeriStates(2,:), trajPeriStates(3,:), 50, 'c', 'o', 'filled', 'HandleVisibility', 'off')
+% % scatter3(trajq0(1), trajq0(2), trajq0(3), 50, 'g', 'o', 'filled', 'DisplayName', "Sample Perigee")
+% plot3(sol0.y(1,:), sol0.y(2,:), sol0.y(3,:), 'b', 'DisplayName', "New Traj.")
+% % % plot3(sol15.y(1,:), sol15.y(2,:), sol15.y(3,:), 'b', 'HandleVisibility', 'off')
+% % p134 = plot3WithArrows(sol15.y(1,:), sol15.y(2,:), sol15.y(3,:), 'Color', 'b', 'NumArrows', 10, 'ArrowScale', 0.5);
+% % set(p134, 'HandleVisibility', 'off')
+% % scatter(sol2.y(1,1), sol2.y(2,1), 50, 'c', 'filled', 'HandleVisibility', 'off')
+% if trajt2 > 0
+%     % plot3(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'b', 'HandleVisibility', 'off')
+%     p134 = plot3WithArrows(sol1.y(1,:), sol1.y(2,:), sol1.y(3,:), 'Color', 'b', 'NumArrows', 5, 'ArrowScale', 1.2);
+%     set(p134, 'HandleVisibility', 'off')
+% end
+% % plot3(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'b', 'HandleVisibility', 'off')
+% p135 = plot3WithArrows(sol2.y(1,:), sol2.y(2,:), sol2.y(3,:), 'Color', 'b', 'NumArrows', 2, 'ArrowScale', 1);
+% set(p135, 'HandleVisibility', 'off')
+% if abs(trajDeltav1) > 0
+%     scatter3(sol1.y(1,1), sol1.y(2,1), sol1.y(3,1), 50, 'w', 's', 'filled', 'DisplayName', "Man. 1")
+% end
+% if abs(trajDeltav2) > 0
+%     scatter3(sol2.y(1,1), sol2.y(2,1), sol2.y(3,1), 50, 'w', '^', 'filled', 'DisplayName', "Man. 2")
+% end
 % axis equal
-% axis([-1.25 1.25 -1.25 1.25])
+% % axis([-1.25 1.25 -1.25 1.25])
 % % axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
 % grid on
 % xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
@@ -412,7 +409,7 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % disp("Initial State: ["+trajApo(1)+", "+trajApo(2)+", "+trajApo(3)+", "+trajApo(4)+", "+trajApo(5)+", "+trajApo(6)+"]")
 % tau = 12*pi;
 % sol = ode89(odeCR3BPEM, [0 tau], trajApo, odeOpts);
-% trajPeri = trajPeriStates(:,9);
+% trajPeri = trajPeriStates(:,10);
 % vMag = norm(trajPeri(4:6));
 % vhat = trajPeri(4:6)./vMag;
 % DeltavHigh = 1000*tstarEM/lstarEM/1000;
@@ -442,7 +439,7 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % disp("New Altered Perigee State: ["+qHigh2(1)+", "+qHigh2(2)+", "+qHigh2(3)+", "+qHigh2(4)+", "+qHigh2(5)+", "+qHigh2(6)+"]")
 % tau2 = 2*pi;
 % sol2 = ode89(odeCR3BPEM, [0 tau2], qHigh2, odeOpts);
-
+% 
 % fig14 = figure("Position", [200 100 1200 750]);
 % hold on
 % Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
@@ -501,9 +498,13 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % d_min = min(ds_filt0);
 % d_max = max(ds_filt0);
 % 
-% % Deltav2s = analysisData.Deltav2s;
-% % escEs = analysisData.EscapeEs;
+% Deltav2s = analysisData.Deltav2s;
+% Deltav2bs = analysisData.Deltav2bs;
+% escvs = analysisData.Escapevs;
+% escvbs = analysisData.Escapevbs;
 % % DeltaEs = analysisData.DeltaEs;
+% gammas = analysisData.metrics;
+% gammabs = analysisData.metricbs;
 % 
 % escE = analysisData.escE;
 % escv = analysisData.escv;
@@ -517,15 +518,21 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 %% Escape Analysis
 % fig8 = figure("Position", [200 100 1200 750]);
 % hold on
-% scatter(Deltav2s.*1000.*lstarEM./tstarEM, escEs, 20, 'filled', 'HandleVisibility', 'off')
+% scatter(Deltav2s.*1000.*lstarEM./tstarEM, escvs, 20, 'filled', 'DisplayName', "Direct")
+% % scatter(Deltav2bs.*1000.*lstarEM./tstarEM, escvbs, 20, 'filled', 'DisplayName', "Indirect")
+% % scatter(Deltav2s.*1000.*lstarEM./tstarEM, gammas, 20, 'filled', 'DisplayName', "Direct")
+% % scatter(Deltav2bs.*1000.*lstarEM./tstarEM, gammabs, 20, 'filled', 'DisplayName', "Indirect")
 % % scatter(Deltav2s.*1000.*lstarEM./tstarEM, DeltaEs, 20, 'filled', 'HandleVisibility', 'off')
 % % scatter(Deltav2s.*1000.*lstarEM./tstarEM, flybys, 20, 'filled', 'HandleVisibility', 'off')
+% % ylim([-60 60])
 % xlabel("$\Delta v_{2}$ [m/s]", 'Interpreter', 'latex')
 % % xlabel("JC", 'Interpreter', 'latex')
-% ylabel("$\mathcal{E}_{esc}$ [km$^{2}$/s$^{2}$]", 'Interpreter', 'latex')
+% % ylabel("$\mathcal{v}_{dep}$ [km/s]", 'Interpreter', 'latex')
+% ylabel("$\gamma_{esc}$", 'Interpreter', 'latex')
 % % ylabel("$d\mathcal{E}_{esc}/d\alpha$ [km/s]", 'Interpreter', 'latex')
 % % ylabel("$r_{p}$ [km]", 'Interpreter', 'latex')
 % title("Maneuver Optimization", 'Interpreter', 'latex')
+% leg8 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 % set(gca, 'Color', 'k');
 % view(2)
 % hold off
@@ -535,8 +542,8 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 
 % qOrig = map.q(:,idx);
 % disp("IC: ["+qOrig(1)+", "+qOrig(2)+", "+qOrig(3)+", "+qOrig(4)+", "+qOrig(5)+", "+qOrig(6)+"]")
-% disp("Original escape energy:"+escE)
-% disp("Original escape velocity:"+escv)
+% disp("Original departure energy:"+escE)
+% disp("Original departure velocity:"+escv)
 % tauOrig = 12*pi;
 % solOrig = ode89(odeCR3BPEM, [0 tauOrig], qOrig, odeOpts);
 
@@ -555,8 +562,8 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % solAssist2 = ode89(odeCR3BPEM, [0 tauAssist2], q2, odeOpts);
 
 % disp("New JC: "+newJC)
-% disp("New escape energy:"+newEscE)
-% disp("New escape velocity:"+newEscv)
+% disp("New departure energy:"+newEscE)
+% disp("New departure velocity:"+newEscv)
 
 % fig9 = figure("Position", [200 100 1200 750]);
 % hold on
@@ -712,8 +719,8 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % % exportgraphics(fig5, 'EscapeCR3BP_5.png','BackgroundColor', 'k')
 
 %% Import JC Volume Data
-% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_1_apo_pro_500_2.9_3.17.mat';
-% volumeDataFile = 'CR3BPJCVolume_1_apo_pro_500_2.9_3.17.mat';
+% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_1_peri_pro_500_2.9_3.17.mat';
+% volumeDataFile = 'CR3BPJCVolume_1_peri_pro_500_2.9_3.17.mat';
 
 % volumeFields = who('-file', volumeFile);
 % nVolume = length(volumeFields);
@@ -867,6 +874,7 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % DeltavColors = rdbuInvert(1000);
 % % DeltavColors = rdbu(1000);
 % maxDeltav = 30;
+% % maxDeltav = 50;
 % parfor j = 1:n
 %     if isnan(totalDeltavs(j))
 %         pointColors(j,:) = [1, 1, 1];
@@ -884,7 +892,7 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % %         pointColors(j,:) = getColor(DeltavColors, maneuverMetrics(j)*1000, [0, maxDeltav]);        
 % %     end
 % % end
-
+% 
 % fig12 = figure("Position", [200 100 1200 750]);
 % hold on
 % scatter(xGrid, yGrid, 1.75, pointColors, 'filled', 'HandleVisibility', 'off')
@@ -894,8 +902,9 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % set(Moon, 'DisplayName', "Moon")
 % scatter(nan, nan, 1.75, 'w', 'filled', 'DisplayName', "Infeasible")
 % % scatter(xPeri, yPeri, 30, 'm', 'filled', 'DisplayName', "Manifold Peris.")
-% % scatter3(sol2.y(1,1), sol2.y(2,1), sol2.y(3,1), 10, 'w', '^', 'filled', 'HandleVisibility', 'off')
-% % scatter3([xPeri(trajIdx), trajPeriStates(1,9)], [yPeri(trajIdx), trajPeriStates(2,9)], [0, trajPeriStates(3,9)], 10, 'w', '^', 'filled', 'HandleVisibility', 'off')
+% % scatter(sol1.y(1,1), sol1.y(2,1), 50, 'c', 'filled', 'HandleVisibility', 'off')
+% scatter(sol2.y(1,1), sol2.y(2,1), 50, 'c', 'filled', 'HandleVisibility', 'off')
+% % scatter(trajPeriStates(1,:), trajPeriStates(2,:), 50, 'c', 'o', 'filled', 'HandleVisibility', 'off')
 % axis equal
 % axis([-1.25 1.25 -1.25 1.25])
 % xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
@@ -909,6 +918,7 @@ odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 % cb12.TickLabels = [string(-maxDeltav)+"+", string(-(maxDeltav-10):10:maxDeltav-10), string(maxDeltav)+"+"];
 % ylabel(cb12, "$\Delta v$ [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 % cb12.Label.Position = cb12.Label.Position+[-3 31 0];
+% % cb12.Label.Position = cb12.Label.Position+[-3 51 0];
 % % colormap(copper)
 % % cb12 = colorbar;
 % % clim([0 maxDeltav])
