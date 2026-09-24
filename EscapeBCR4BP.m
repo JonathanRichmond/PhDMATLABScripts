@@ -6,7 +6,7 @@
 clear
 
 %% Import Map Data
-mapsData = load('../PhDScripts/Output/ApseMaps/BCR4BP_1_peri_pro_500_3.0663_0.0.mat');
+mapsData = load('../PhDScripts/Output/ApseMaps/BCR4BP_1_peri_pro_500_3.0663_1.571.mat');
 mapFields = fieldnames(mapsData);
 map = mapsData.(mapFields{1});
 primary = map.primary;
@@ -192,49 +192,49 @@ colorMap = viridis(6); % Escape
 colorMap(7,:) = [0.78, 0.72, 0.66]; % Capture
 colorMap(8,:) = [1, 0, 0]; % Impact
 % colorMap(8,:) = [0.78, 0.72, 0.66]; % Impact
-colorMap(9,:) = [0, 0, 0]; % Invalid apse
-colorMap(10,:) = [1, 1, 1]; % ZVC
-% colorMap(10,:) = [0, 0, 0]; % ZVC
-% colorMap(9,:) = [1, 1, 1]; % Invalid apse
+% colorMap(9,:) = [0, 0, 0]; % Invalid apse
+% colorMap(10,:) = [1, 1, 1]; % ZVC
+colorMap(10,:) = [0, 0, 0]; % ZVC
+colorMap(9,:) = [1, 1, 1]; % Invalid apse
 
 %% Map
-% fig1 = figure("Position", [200 100 1200 750]);
-% hold on
-% scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
-% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-% set(Earth, 'DisplayName', "Earth")
-% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-% set(Moon, 'DisplayName', "Moon")
-% scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
-% scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
-% scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
-% axis equal
-% if primary == "Moon"
-%     axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
-% else
-%     axis([-1.25 1.25 -1.25 1.25])
-% end
-% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-% % title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
-% colormap(colorMap(1:6,:))
-% cb1 = colorbar;
-% clim([-0.5 5.5])
-% cb1.Ticks = 0:5;
-% cb1.TickLabels = [string(0:4), "5+"];
-% ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% % ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
-% leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-% drawnow;
-% set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-% set(gca, 'Color', 'k');
-% view(2)
-% hold off
-% ax1 = gca;
-% ax1.SortMethod = 'childorder';
-% % exportgraphics(fig1, 'EscapeBCR4BP_1.png', 'BackgroundColor', 'k')
-% % exportgraphics(fig1, 'EscapeBCR4BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+fig1 = figure("Position", [200 100 1200 750]);
+hold on
+scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
+Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+set(Earth, 'DisplayName', "Earth")
+Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+set(Moon, 'DisplayName', "Moon")
+scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
+scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
+scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
+axis equal
+if primary == "Moon"
+    axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+else
+    axis([-1.25 1.25 -1.25 1.25])
+end
+xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
+colormap(colorMap(1:6,:))
+cb1 = colorbar;
+clim([-0.5 5.5])
+cb1.Ticks = 0:5;
+cb1.TickLabels = [string(0:4), "5+"];
+ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
+leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+drawnow;
+set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+set(gca, 'Color', 'w');
+view(2)
+hold off
+ax1 = gca;
+ax1.SortMethod = 'childorder';
+% exportgraphics(fig1, 'EscapeBCR4BP_1.png', 'BackgroundColor', 'w')
+% exportgraphics(fig1, 'EscapeBCR4BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Import Sun Angle Volume Data
 % volumeFile = 'E:/ApseMapData/BCR4BPthetaVolume_1_peri_pro_500_3.0663.mat';
