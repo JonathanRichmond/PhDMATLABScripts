@@ -1,12 +1,12 @@
 %%% EscapeCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 16 June 2026
-%%% U: 24 September 2026
+%%% U: 1 October 2026
 
 clear
 
 %% Import Map Data
-mapsData = load('../PhDScripts/Output/ApseMaps/CR3BP_2_peri_retro_500_3.0663.mat');
+mapsData = load('../PhDScripts/Output/ApseMaps/CR3BP_1_peri_pro_500_3.036.mat');
 mapFields = fieldnames(mapsData);
 map = mapsData.(mapFields{1});
 primary = map.primary;
@@ -291,25 +291,221 @@ colorMap(10,:) = [1, 1, 1]; % ZVC
 odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
 odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 
+%% Import Assist Data
+assistOrbitData = load('../PhDScripts/Output/AssistOrbitEscapeCR3BP.mat');
+orbitIC = assistOrbitData.orbitIC;
+orbitP = assistOrbitData.orbitP;
+qOrbits = assistOrbitData.orbitStates;
+qMans = assistOrbitData.manifoldStates;
+t0s = assistOrbitData.initialTimes;
+q0s = assistOrbitData.initialStates;
+
+qPeri0 = assistOrbitData.qPeri0;
+tPeri0 = assistOrbitData.tPeri0;
+Deltav1 = assistOrbitData.Deltav1;
+qPeri1 = assistOrbitData.qPeri1;
+tPeri1 = assistOrbitData.tPeri1;
+JC1 = assistOrbitData.JC1;
+Deltav2 = assistOrbitData.Deltav2;
+qPeri2 = assistOrbitData.qPeri2;
+tPeri2 = assistOrbitData.tPeri2;
+JC2 = assistOrbitData.JC2;
+Deltav3 = assistOrbitData.Deltav3;
+qPeri3 = assistOrbitData.qPeri3;
+tPeri3 = assistOrbitData.tPeri3;
+JC3 = assistOrbitData.JC3;
+Deltav4 = assistOrbitData.Deltav4;
+qPeri4 = assistOrbitData.qPeri4;
+tPeri4 = assistOrbitData.tPeri4;
+
+%% Assist Escape Sample
+sampleIdx = 1;
+solOrbit = ode89(odeCR3BPEM, [0 orbitP], orbitIC, odeOpts);
+
+% tInterp = [0:(0.1*3600*24/tstarEM):(t0s(sampleIdx)+12*pi), t0s(sampleIdx)+12*pi];
+% t0 = [tInterp(tInterp < periTimes(trajIdx)+trajt1), periTimes(trajIdx)+trajt1];
+% t1 = [periTimes(trajIdx)+trajt1, tInterp((tInterp > periTimes(trajIdx)+trajt1) & (tInterp < periTimes(trajIdx)+trajt1+trajt2)), periTimes(trajIdx)+trajt1+trajt2];
+% t15 = [periTimes(trajIdx)+trajt1, tInterp(tInterp > periTimes(trajIdx)+trajt1)];
+% t2 = [periTimes(trajIdx)+trajt1+trajt2, tInterp(tInterp > periTimes(trajIdx)+trajt1+trajt2)];
+
+% solOrbit = ode89(odeCR3BPEM, [0 tOrbit], qOrbit, odeOpts);
+% disp("Initial State: ["+trajq0(1)+", "+trajq0(2)+", "+trajq0(3)+", "+trajq0(4)+", "+trajq0(5)+", "+trajq0(6)+"]")
+% disp("Original departure energy:"+trajEscE)
+% disp("Original departure velocity:"+trajEscv)
+% tau = 12*pi;
+% sol = ode89(odeCR3BPEM, [0 periTimes(trajIdx)+12*pi], initialStates(:,trajIdx), odeOpts);
+% q = deval(sol, tInterp);
+% sol0 = ode89(odeCR3BPEM, [0 periTimes(trajIdx)+trajt1], initialStates(:,trajIdx), odeOpts);
+% q0 = deval(sol0, t0);
+% disp("Delta-v 1: "+trajDeltav1*1000*lstarEM/tstarEM+" m/s")
+% disp("Indirect State: ["+trajq1(1)+", "+trajq1(2)+", "+trajq1(3)+", "+trajq1(4)+", "+trajq1(5)+", "+trajq1(6)+"]")
+% if trajt2 > 0
+%     sol1 = ode89(odeCR3BPEM, [periTimes(trajIdx)+trajt1 periTimes(trajIdx)+trajt1+trajt2], trajq1, odeOpts);
+%     q1 = deval(sol1, t1);
+% end
+% sol15 = ode89(odeCR3BPEM, [periTimes(trajIdx)+trajt1 periTimes(trajIdx)+12*pi], trajq1, odeOpts);
+% q15 = deval(sol15, t15);
+% disp("Delta-v 2: "+trajDeltav2*1000*lstarEM/tstarEM+" m/s")
+% disp("Escape State: ["+trajq2(1)+", "+trajq2(2)+", "+trajq2(3)+", "+trajq2(4)+", "+trajq2(5)+", "+trajq2(6)+"]")
+% sol2 = ode89(odeCR3BPEM, [periTimes(trajIdx)+trajt1+trajt2 periTimes(trajIdx)+12*pi], trajq2, odeOpts);
+% q2 = deval(sol2, t2);
+% disp("New JC: "+trajNewJC)
+% disp("New departure energy:"+trajNewEscE)
+% disp("New departure velocity:"+trajNewEscv)
+% disp("Departure metric:"+(trajNewEscv-trajEscv)/((abs(trajDeltav1)+abs(trajDeltav2))*lstarEM/tstarEM))
+
+solMan = ode89(odeCR3BPEM, [0 t0s(sampleIdx)], qMans(:,sampleIdx), odeOpts);
+solTraj0 = ode89(odeCR3BPEM, [0 12*pi], q0s(:,sampleIdx), odeOpts);
+solArc0 = ode89(odeCR3BPEM, [0 tPeri0], q0s(:,sampleIdx), odeOpts);
+if tPeri1 > 0
+    solArc1 = ode89(odeCR3BPEM, [0 tPeri1], qPeri0, odeOpts);
+end
+solTraj1 = ode89(odeCR3BPEM, [0 12*pi], qPeri1, odeOpts);
+if tPeri2 > 0
+    solArc2 = ode89(odeCR3BPEM, [0 tPeri2], qPeri1, odeOpts);
+end
+solTraj2 = ode89(odeCR3BPEM, [0 12*pi], qPeri2, odeOpts);
+if tPeri3 > 0
+    solArc3 = ode89(odeCR3BPEM, [0 tPeri3], qPeri2, odeOpts);
+end
+solTraj3 = ode89(odeCR3BPEM, [0 12*pi], qPeri3, odeOpts);
+solArc4 = ode89(odeCR3BPEM, [0 tPeri4], qPeri3, odeOpts);
+solTraj4 = ode89(odeCR3BPEM, [0 12*pi], qPeri4, odeOpts);
+
+disp("Delta-v 1: "+Deltav1*1000*lstarEM/tstarEM+" m/s")
+disp("JC 1: "+JC1)
+disp("Delta-v 2: "+Deltav2*1000*lstarEM/tstarEM+" m/s")
+disp("JC 2: "+JC2)
+disp("Delta-v 3: "+Deltav3*1000*lstarEM/tstarEM+" m/s")
+disp("JC 3: "+JC3)
+disp("Delta-v 4: "+Deltav4*1000*lstarEM/tstarEM+" m/s")
+
+% fig18 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% plot3(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'g:', 'DisplayName', "Orbit")
+% % scatter3(qOrbits(1,:), qOrbits(2,:), qOrbits(3,:), 20, 'r', 'filled', 'DisplayName', "Orbit")
+% scatter3(qMans(1,:), qMans(2,:), qMans(3,:), 20, 'r', 'filled', 'DisplayName', "Step-off")
+% scatter3(q0s(1,:), q0s(2,:), q0s(3,:), 20, 'g', 'filled', 'DisplayName', "ICs")
+% axis equal
+% axis([-1.25 1.25 -1.25 1.25])
+% grid on
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.", 'Interpreter', 'latex')
+% leg18 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg18.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax19 = gca;
+% ax19.SortMethod = 'childorder';
+% % exportgraphics(fig19, 'EscapeCR3BP_19.png','BackgroundColor', 'k')
+
+fig19 = figure("Position", [200 100 1200 750]);
+hold on
+Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+set(Earth, 'DisplayName', "Earth")
+Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+set(Moon, 'DisplayName', "Moon")
+scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% plot3(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'g:', 'DisplayName', "Orbit")
+p191 = plot3WithArrows(solOrbit.y(1,:), solOrbit.y(2,:), solOrbit.y(3,:), 'LineType', ':', 'Color', 'g', 'NumArrows', 2, 'ArrowScale', 5);
+set(p191, 'DisplayName', "Orbit")
+scatter3(qMans(1,sampleIdx), qMans(2,sampleIdx), qMans(3,sampleIdx), 20, 'r', 'filled', 'DisplayName', "Step-off")
+% scatter3(q0s(1,sampleIdx), q0s(2,sampleIdx), q0s(3,sampleIdx), 20, 'g', 'filled', 'DisplayName', "IC")
+% plot3(solMan.y(1,:), solMan.y(2,:), solMan.y(3,:), 'm', 'DisplayName', "Orig. Traj.")
+p192 = plot3WithArrows(solMan.y(1,:), solMan.y(2,:), solMan.y(3,:), 'Color', 'm', 'NumArrows', 2, 'ArrowScale', 5);
+set(p192, 'DisplayName', "Orig. Traj.")
+% % plot3(solTraj0.y(1,:), solTraj0.y(2,:), solTraj0.y(3,:), 'm', 'HandleVisibility', 'off')
+% p193 = plot3WithArrows(solTraj0.y(1,:), solTraj0.y(2,:), solTraj0.y(3,:), 'Color', 'm', 'NumArrows', 10, 'ArrowScale', 1);
+% set(p193, 'HandleVisibility', 'off')
+% plot3(solArc0.y(1,:), solArc0.y(2,:), solArc0.y(3,:), 'm', 'HandleVisibility', 'off')
+p194 = plot3WithArrows(solArc0.y(1,:), solArc0.y(2,:), solArc0.y(3,:), 'Color', 'm', 'NumArrows', 2, 'ArrowScale', 3);
+set(p194, 'HandleVisibility', 'off')
+if tPeri1 > 0
+    % plot3(solArc1.y(1,:), solArc1.y(2,:), solArc1.y(3,:), 'm', 'HandleVisibility', 'off')
+    p195 = plot3WithArrows(solArc1.y(1,:), solArc1.y(2,:), solArc1.y(3,:), 'Color', 'm', 'NumArrows', 2, 'ArrowScale', 3);
+    set(p195, 'HandleVisibility', 'off')
+end
+if tPeri2 > 0
+    plot3(solArc2.y(1,:), solArc2.y(2,:), solArc2.y(3,:), 'b', 'DisplayName', "Esc. Traj.")
+    p196 = plot3WithArrows(solArc2.y(1,:), solArc2.y(2,:), solArc2.y(3,:), 'Color', 'b', 'NumArrows', 5, 'ArrowScale', 1.5);
+    set(p196, 'HandleVisibility', 'off')
+    % plot3(solTraj1.y(1,:), solTraj1.y(2,:), solTraj1.y(3,:), 'b', 'HandleVisibility', 'off')
+    p197 = plot3WithArrows(solTraj1.y(1,:), solTraj1.y(2,:), solTraj1.y(3,:), 'Color', 'b', 'NumArrows', 10, 'ArrowScale', 0.25);
+    set(p197, 'HandleVisibility', 'off')
+end
+if tPeri3 > 0
+    plot3(solArc3.y(1,:), solArc3.y(2,:), solArc3.y(3,:), 'c', 'DisplayName', "Flyby Traj.")
+    % p198 = plot3WithArrows(solArc3.y(1,:), solArc3.y(2,:), solArc3.y(3,:), 'Color', 'c', 'NumArrows', 2, 'ArrowScale', 3);
+    % set(p198, 'HandleVisibility', 'off')
+    % plot3(solTraj2.y(1,:), solTraj2.y(2,:), solTraj2.y(3,:), 'c', 'HandleVisibility', 'off')
+    p199 = plot3WithArrows(solTraj2.y(1,:), solTraj2.y(2,:), solTraj2.y(3,:), 'Color', 'c', 'NumArrows', 10, 'ArrowScale', 0.25);
+    set(p199, 'HandleVisibility', 'off')
+end
+plot3(solArc4.y(1,:), solArc4.y(2,:), solArc4.y(3,:), 'y', 'DisplayName', "Closer Flyby Traj.")
+% plot3(solTraj3.y(1,:), solTraj3.y(2,:), solTraj3.y(3,:), 'y', 'HandleVisibility', 'off')
+p1911 = plot3WithArrows(solTraj3.y(1,:), solTraj3.y(2,:), solTraj3.y(3,:), 'Color', 'y', 'NumArrows', 10, 'ArrowScale', 0.15);
+set(p1911, 'HandleVisibility', 'off')
+% plot3(solTraj4.y(1,:), solTraj4.y(2,:), solTraj4.y(3,:), 'g', 'DisplayName', "Final Traj.")
+p1912 = plot3WithArrows(solTraj4.y(1,:), solTraj4.y(2,:), solTraj4.y(3,:), 'Color', 'g', 'NumArrows', 10, 'ArrowScale', 0.05);
+set(p1912, 'DisplayName', "Final Traj.")
+% scatter3(qPeri0(1), qPeri0(2), qPeri0(3), 20, 'y', 'filled', 'DisplayName', "Peri. 0")
+if abs(Deltav1) > 0
+    scatter3(qPeri1(1), qPeri1(2), qPeri1(3), 50, 'w', 'filled', '^', 'DisplayName', "Man. 1")
+end
+if abs(Deltav2) > 0
+    scatter3(qPeri2(1), qPeri2(2), qPeri2(3), 50, 'w', 'filled', 's', 'DisplayName', "Man. 2")
+end
+if abs(Deltav3) > 0
+    scatter3(qPeri3(1), qPeri3(2), qPeri3(3), 50, 'w', 'filled', '*', 'DisplayName', "Man. 3")
+end
+if abs(Deltav4) > 0
+    scatter3(qPeri4(1), qPeri4(2), qPeri4(3), 50, 'w', 'filled', 'd', 'DisplayName', "Man. 4")
+end
+axis equal
+% axis([-1.25 1.25 -1.25 1.25])
+grid on
+xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+title("Earth-Moon Rot.", 'Interpreter', 'latex')
+leg19 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+drawnow;
+set(leg19.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+set(gca, 'Color', 'k');
+view(2)
+hold off
+ax19 = gca;
+ax19.SortMethod = 'childorder';
+% exportgraphics(fig19, 'EscapeCR3BP_19.png','BackgroundColor', 'k')
+
 %% Test Trajectory
-% xSample = 0.916908;
-% ySample = 0.0757515;
+% xSample = 0.940154;
+% ySample = -0.0476954;
 % idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
 % Perigee
 % idx = 46420 % Direct
 % idx = 124010 % Indirect
 % idx = 133530 % Failure
 % Perilune
-idx = 49642 % Direct
+% idx = 49642 % Direct
 % idx = 113252 % Indirect
 % idx = 98165 % Failure
 
-% % q = map.q(:,idx);
-% q = initialStates(:,trajIdx);
+% q = map.q(:,idx);
+% % q = initialStates(:,trajIdx);
 % disp("Sample IC: ["+q(1)+", "+q(2)+", "+q(3)+", "+q(4)+", "+q(5)+", "+q(6)+"]")
-% tau = 4*pi;
+% tau = -2*pi;
 % sol = ode89(odeCR3BPEM, [0 tau], q, odeOpts);
-% 
+
 % fig2 = figure("Position", [200 100 1200 750]);
 % hold on
 % Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
@@ -829,17 +1025,17 @@ idx = 49642 % Direct
 %% Escape Analysis
 % fig8 = figure("Position", [200 100 1200 750]);
 % hold on
-% % scatter(Deltav2s.*1000.*lstarEM./tstarEM, escvs, 20, 'filled', 'DisplayName', "Direct")
+% scatter(Deltav2s.*1000.*lstarEM./tstarEM, escvs, 20, 'filled', 'DisplayName', "Direct")
 % % scatter(Deltav2bs.*1000.*lstarEM./tstarEM, escvbs, 20, 'filled', 'DisplayName', "Indirect")
-% scatter(Deltav2s.*1000.*lstarEM./tstarEM, gammas, 20, 'filled', 'DisplayName', "Direct")
+% % scatter(Deltav2s.*1000.*lstarEM./tstarEM, gammas, 20, 'filled', 'DisplayName', "Direct")
 % % scatter(Deltav2bs.*1000.*lstarEM./tstarEM, gammabs, 20, 'filled', 'DisplayName', "Indirect")
 % % scatter(Deltav2s.*1000.*lstarEM./tstarEM, DeltaEs, 20, 'filled', 'HandleVisibility', 'off')
 % % scatter(Deltav2s.*1000.*lstarEM./tstarEM, flybys, 20, 'filled', 'HandleVisibility', 'off')
 % % ylim([-60 60])
 % xlabel("$\Delta v_{2}$ [m/s]", 'Interpreter', 'latex')
 % % xlabel("JC", 'Interpreter', 'latex')
-% % ylabel("$\mathcal{v}_{dep}$ [km/s]", 'Interpreter', 'latex')
-% ylabel("$\gamma_{esc}$", 'Interpreter', 'latex')
+% ylabel("$\mathcal{v}_{dep}$ [km/s]", 'Interpreter', 'latex')
+% % ylabel("$\gamma_{esc}$", 'Interpreter', 'latex')
 % % ylabel("$d\mathcal{E}_{esc}/d\alpha$ [km/s]", 'Interpreter', 'latex')
 % % ylabel("$r_{p}$ [km]", 'Interpreter', 'latex')
 % title("Maneuver Optimization", 'Interpreter', 'latex')
@@ -859,19 +1055,25 @@ idx = 49642 % Direct
 % solOrig = ode89(odeCR3BPEM, [0 tauOrig], qOrig, odeOpts);
 % 
 % % % Deltav1
-% q1 = qMan;
-% disp("Delta-v 1: "+Deltav1*1000*lstarEM/tstarEM+" m/s")
-% disp("Maneuver 1 state: ["+q1(1)+", "+q1(2)+", "+q1(3)+", "+q1(4)+", "+q1(5)+", "+q1(6)+"]")
-% tauAssist1 = 10*pi;
-% solAssist1 = ode89(odeCR3BPEM, [0 tauAssist1], q1, odeOpts);
+% % q1 = qMan;
+% % disp("Delta-v 1: "+Deltav1*1000*lstarEM/tstarEM+" m/s")
+% % disp("Maneuver 1 state: ["+q1(1)+", "+q1(2)+", "+q1(3)+", "+q1(4)+", "+q1(5)+", "+q1(6)+"]")
+% % tauAssist1 = 10*pi;
+% % solAssist1 = ode89(odeCR3BPEM, [0 tauAssist1], q1, odeOpts);
 % 
-% % % Deltav2
-% % q2 = qMan;
-% % Deltav2 = 1000*tstarEM/1000/lstarEM;
-% % disp("Delta-v 2: "+Deltav2*1000*lstarEM/tstarEM+" m/s")
-% % disp("Maneuver 2 state: ["+q2(1)+", "+q2(2)+", "+q2(3)+", "+q2(4)+", "+q2(5)+", "+q2(6)+"]")
-% % tauAssist2 = 2*pi;
-% % solAssist2 = ode89(odeCR3BPEM, [0 tauAssist2], q2, odeOpts);
+% % Deltav2
+% q2 = qMan;
+% Deltav2 = 1000*tstarEM/1000/lstarEM;
+% % q2 = qOrig;
+% % Deltav2 = Deltav2s(24)+0.1;
+% % v2Mag = norm(q2(4:6));
+% % vhat2 = q2(4:6)./v2Mag;
+% % v2MagNew = v2Mag+Deltav2;
+% % q2(4:6) = vhat2.*v2MagNew;
+% disp("Delta-v 2: "+Deltav2*1000*lstarEM/tstarEM+" m/s")
+% disp("Maneuver 2 state: ["+q2(1)+", "+q2(2)+", "+q2(3)+", "+q2(4)+", "+q2(5)+", "+q2(6)+"]")
+% tauAssist2 = 12*pi;
+% solAssist2 = ode89(odeCR3BPEM, [0 tauAssist2], q2, odeOpts);
 % 
 % disp("New JC: "+newJC)
 % disp("New departure energy:"+newEscE)
@@ -890,12 +1092,12 @@ idx = 49642 % Direct
 % % p91 = plot3WithArrows(solOrig.y(1,:), solOrig.y(2,:), solOrig.y(3,:), 'Color', colorMap(flags(idx)+1,:));
 % % set(p91, 'DisplayName', "Original Traj.")
 % plot3(solOrig.y(1,:), solOrig.y(2,:), solOrig.y(3,:), 'Color', colorMap(flags(idx)+1,:), 'DisplayName', "Original Traj.")
-% % p92 = plot3WithArrows(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b');
-% % set(p92, 'DisplayName', "Assisted Traj.")
-% plot3(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
-% % % p93 = plot3WithArrows(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'b');
-% % % set(p93, 'DisplayName', "Assisted Traj.")
-% % plot3(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
+% % % p92 = plot3WithArrows(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b');
+% % % set(p92, 'DisplayName', "Assisted Traj.")
+% % plot3(solAssist1.y(1,:), solAssist1.y(2,:), solAssist1.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
+% % p93 = plot3WithArrows(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'b');
+% % set(p93, 'DisplayName', "Assisted Traj.")
+% plot3(solAssist2.y(1,:), solAssist2.y(2,:), solAssist2.y(3,:), 'b', 'DisplayName', "Assisted Traj.")
 % axis equal
 % if primary == "Moon"
 %     axis([1-muEM-0.2 1-muEM+0.2 -0.2 0.2])
