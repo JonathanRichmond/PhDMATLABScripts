@@ -192,10 +192,10 @@ colorMap = viridis(6); % Escape
 colorMap(7,:) = [0.78, 0.72, 0.66]; % Capture
 colorMap(8,:) = [1, 0, 0]; % Impact
 % colorMap(8,:) = [0.78, 0.72, 0.66]; % Impact
-% colorMap(9,:) = [0, 0, 0]; % Invalid apse
-% colorMap(10,:) = [1, 1, 1]; % ZVC
-colorMap(10,:) = [0, 0, 0]; % ZVC
-colorMap(9,:) = [1, 1, 1]; % Invalid apse
+colorMap(9,:) = [0, 0, 0]; % Invalid apse
+colorMap(10,:) = [1, 1, 1]; % ZVC
+% colorMap(10,:) = [0, 0, 0]; % ZVC
+% colorMap(9,:) = [1, 1, 1]; % Invalid apse
 
 %% Map
 fig1 = figure("Position", [200 100 1200 750]);
@@ -216,7 +216,7 @@ else
 end
 xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-% title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
+title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
 colormap(colorMap(1:6,:))
 cb1 = colorbar;
 clim([-0.5 5.5])
@@ -228,12 +228,12 @@ cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
 leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 drawnow;
 set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'w');
+set(gca, 'Color', 'k');
 view(2)
 hold off
 ax1 = gca;
 ax1.SortMethod = 'childorder';
-% exportgraphics(fig1, 'EscapeBCR4BP_1.png', 'BackgroundColor', 'w')
+% exportgraphics(fig1, 'EscapeBCR4BP_1.png', 'BackgroundColor', 'k')
 % exportgraphics(fig1, 'EscapeBCR4BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Import Sun Angle Volume Data
