@@ -1,12 +1,17 @@
 %%% EscapeBCR4BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 19 August 2026
-%%% U: 24 August 2026
+%%% U: 15 October 2026
 
 clear
 
 %% Import Map Data
-mapsData = load('../PhDScripts/Output/ApseMaps/BCR4BP_1_peri_pro_500_3.0663_1.571.mat');
+mapsDataCRBP = load('../PhDScripts/Output/ApseMaps/CR3BP_1_peri_pro_500_3.0663.mat');
+mapFieldsCR3BP = fieldnames(mapsDataCRBP);
+mapCR3BP = mapsDataCRBP.(mapFieldsCR3BP{1});
+flagsCR3BP = mapCR3BP.flags;
+
+mapsData = load('../PhDScripts/Output/ApseMaps/BCR4BP_1_peri_pro_500_3.0663_0.0.mat');
 mapFields = fieldnames(mapsData);
 map = mapsData.(mapFields{1});
 primary = map.primary;
@@ -30,6 +35,8 @@ n = length(map.flags);
 xGrid = map.q(1,:);
 yGrid = map.q(2,:);
 flags = map.flags;
+periapses = map.periapses;
+periapsesIndices = map.periapsesIndices;
 
 %% Earth-Moon Data
 gmE = 3.9860043543609593E5; % Earth gravitational parameter [km^3/s^2]
@@ -84,6 +91,9 @@ a3EM = -1*muEM-g3EM;
 a45EM = 0.5-muEM;
 b4EM = sqrt(3)/2;
 b5EM = -b4EM;
+
+m4 = 3.2890055981024733E5;
+a4 = 3.888204672248271E2;
 
 %% Sun-Earth Data
 gmS = 1.327124400419393E11; % Sun gravitational parameter [km^3/s^2]
@@ -197,44 +207,211 @@ colorMap(10,:) = [1, 1, 1]; % ZVC
 % colorMap(10,:) = [0, 0, 0]; % ZVC
 % colorMap(9,:) = [1, 1, 1]; % Invalid apse
 
+%% CR3BP Map
+% fig0 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, colorMap(flagsCR3BP+1,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
+% scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
+% scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
+% colormap(colorMap(1:6,:))
+% cb0 = colorbar;
+% clim([-0.5 5.5])
+% cb0.Ticks = 0:5;
+% cb0.TickLabels = [string(0:4), "5+"];
+% ylabel(cb0, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% % ylabel(cb0, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb0.Label.Position = cb0.Label.Position+[-2.3 3.1 0];
+% leg0 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg0.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax0 = gca;
+% ax0.SortMethod = 'childorder';
+
 %% Map
-fig1 = figure("Position", [200 100 1200 750]);
+% fig1 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
+% scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
+% scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
+% colormap(colorMap(1:6,:))
+% cb1 = colorbar;
+% clim([-0.5 5.5])
+% cb1.Ticks = 0:5;
+% cb1.TickLabels = [string(0:4), "5+"];
+% ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% % ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
+% leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax1 = gca;
+% ax1.SortMethod = 'childorder';
+% % exportgraphics(fig1, 'EscapeBCR4BP_1.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig1, 'EscapeBCR4BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+
+%% Difference Colormap
+difColorMap(1,:) = [0.267, 0.005, 0.329]; % Robust escape
+difColorMap(2,:) = [0, 0.5, 0.5]; % Solar-inhibited escape
+difColorMap(3,:) = [0.5, 0.5, 0]; % Solar-assisted escape
+difColorMap(4,:) = [0.78, 0.72, 0.66]; % Robust capture
+difColorMap(5,:) = [0, 0, 0]; % Invalid apse
+difColorMap(6,:) = [1, 1, 1]; % ZVC
+
+flagsDif = flags;
+flagsDif((flags < 6) & (flagsCR3BP < 6)) = 1; % Robust escape
+flagsDif((flags >= 6) & (flagsCR3BP < 6)) = 2; % Solar-inhibited escape
+flagsDif((flags < 6) & (flagsCR3BP >= 6)) = 3; % Solar-assisted escape
+flagsDif((flags >= 6) & (flagsCR3BP >= 6)) = 4; % Robust capture
+flagsDif(flags == 8) = 5; % Invalid apse
+flagsDif(flags == 9) = 6; % ZVC
+
+%% Difference Map
+% fig2 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, difColorMap(flagsDif,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 20, difColorMap(1,:), 'filled', 'DisplayName', "Robust escape")
+% scatter(nan, nan, 20, difColorMap(2,:), 'filled', 'DisplayName', "Solar-inhibited escape")
+% scatter(nan, nan, 20, difColorMap(3,:), 'filled', 'DisplayName', "Solar-assisted escape")
+% scatter(nan, nan, 20, difColorMap(4,:), 'filled', 'DisplayName', "Robust capture")
+% scatter(nan, nan, 20, difColorMap(6,:), 'filled', 'DisplayName', "ZVC")
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
+% leg2 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg2.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax2 = gca;
+% ax2.SortMethod = 'childorder';
+% exportgraphics(fig2, 'EscapeBCR4BP_2.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig2, 'EscapeBCR4BP_2.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+
+%% Propagators
+odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
+odeBCR4BPEM = @(t,r) ODE_BCR4BP(t, r, muEM, m4, a4, mS, mstarEM);
+odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
+
+%% Test Trajectory
+xSample = -0.0456914;
+ySample = 0.579559;
+idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5));
+
+q = map.q(:,idx);
+disp("Sample IC: ["+q(1)+", "+q(2)+", "+q(3)+", "+q(4)+", "+q(5)+", "+q(6)+", "+q(7)+"]")
+tau = 10*pi;
+solCR3BP = ode89(odeCR3BPEM, [0 tau], q(1:6), odeOpts);
+solBCR4BP = ode89(odeBCR4BPEM, [0, tau], q, odeOpts);
+instJC = zeros(size(solBCR4BP.x));
+for j = 1:length(instJC)
+    instJC(j) = getJC(muEM, solBCR4BP.y(:,j));
+end
+periIndices = find(abs(periapsesIndices-idx) < 1E-5);
+peris = periapses(:,periIndices(1):periIndices(end));
+thetaSdot = sqrt((mS/mstarEM+1)/(a4^3))-1;
+periTimes = peris(7,:)./thetaSdot;
+periJCs = zeros(size(periTimes));
+for j = 1:length(periTimes)
+    periJCs(j) = getJC(muEM, peris(:,j));
+end
+
+fig4 = figure("Position", [200 100 1200 750]);
 hold on
-scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
 Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
 set(Earth, 'DisplayName', "Earth")
 Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
 set(Moon, 'DisplayName', "Moon")
-scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
-scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
-scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
+scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+scatter3(solCR3BP.y(1,1), solCR3BP.y(2,1), solCR3BP.y(3,1), 50, 'g', 'filled', 'DisplayName', "Start")
+p41 = plot3WithArrows(solCR3BP.y(1,:), solCR3BP.y(2,:), solCR3BP.y(3,:), 'Color', colorMap(flagsCR3BP(idx)+1,:), 'NumArrows', 5);
+set(p41, 'DisplayName', "CR3BP")
+p42 = plot3WithArrows(solBCR4BP.y(1,:), solBCR4BP.y(2,:), solBCR4BP.y(3,:), 'Color', colorMap(flags(idx)+1,:), 'NumArrows', 10, 'ArrowScale', 0.2);
+set(p42, 'DisplayName', "$\theta_{S}=0$")
+scatter3(peris(1,:), peris(2,:), peris(3,:), 50, 'm', 'filled', 'DisplayName', "Periapses")
 axis equal
 if primary == "Moon"
-    axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+    axis([1-muEM-0.2 1-muEM+0.2 -0.2 0.2])
 else
     axis([-1.25 1.25 -1.25 1.25])
 end
+grid on
 xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
 ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-title("Earth-Moon Rot.: JC = "+JC+" | $\theta_{S}$ = "+thetaS+"$^{\circ}$", 'Interpreter', 'latex')
-colormap(colorMap(1:6,:))
-cb1 = colorbar;
-clim([-0.5 5.5])
-cb1.Ticks = 0:5;
-cb1.TickLabels = [string(0:4), "5+"];
-ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
-leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+title("Earth-Moon Rot.", 'Interpreter', 'latex')
+leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
 drawnow;
-set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+set(leg4.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
 set(gca, 'Color', 'k');
 view(2)
 hold off
-ax1 = gca;
-ax1.SortMethod = 'childorder';
-% exportgraphics(fig1, 'EscapeBCR4BP_1.png', 'BackgroundColor', 'k')
-% exportgraphics(fig1, 'EscapeBCR4BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+ax4 = gca;
+ax4.SortMethod = 'childorder';
+exportgraphics(fig4, 'EscapeBCR4BP_4.png','BackgroundColor', 'k')
+
+fig5 = figure("Position", [200 100 1200 750]);
+hold on
+yline(JC, 'w--', 'LineWidth', 1, 'DisplayName', "CR3BP");
+plot(solBCR4BP.x, instJC, 'DisplayName', "Inst. JC")
+xline(2*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
+xline(4*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
+xline(6*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
+scatter(periTimes, periJCs, 50, 'm', 'filled', 'DisplayName', "Periapses")
+ylim([JC-0.025 JC+0.025])
+xlabel("$\tau$ [E-M ndim]", 'Interpreter', 'latex')
+ylabel("JC", 'Interpreter', 'latex')
+leg5 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+set(gca, 'Color', 'k');
+view(2)
+hold off
+ax5 = gca;
+ax5.SortMethod = 'childorder';
+exportgraphics(fig5, 'EscapeBCR4BP_5.png', 'BackgroundColor', 'k')
 
 %% Import Sun Angle Volume Data
 % volumeFile = 'E:/ApseMapData/BCR4BPthetaVolume_1_peri_pro_500_3.0663.mat';

@@ -1,7 +1,7 @@
 %%% plot3WithArrows
 %%% Jonathan LeFevre Richmond
 %%% C: 18 February 2026
-%%% U: 2 June 2026
+%%% U: 14 October 2026
 
 function [plotHandle] = plot3WithArrows(xdata, ydata, zdata, varargin)
 %% Set up Parsing
@@ -66,8 +66,6 @@ end
 %% Compute arrow directions and locations
 numBasePts = 8;
 arrows = struct('tip', cell(1, numArrows), 'basePts', cell(1, numArrows));
-stepSize = round(length(xdata)/(numArrows));
-startIx = round(stepSize/2);
 
 % Range of x and y; use to choose size of arrowhead
 xExtent = abs(max(xdata) - min(xdata));
@@ -80,21 +78,46 @@ l = 0.04*avgExt*scale;  % Length of arrowhead
 w = l;                              % Width of arrowhead
 s = -0.5*l;                         % Distance from base point to bottom (flat edge) of arrowhead
 
+dx = diff(xdata(:));
+dy = diff(ydata(:));
+dz = diff(zdata(:));
+segmentLengths = sqrt(dx.^2 + dy.^2 + dz.^2);
+cumArcLen = [0; cumsum(segmentLengths)];
+totalArcLen = cumArcLen(end);
+% stepSize = round((length(xdata)-1)/(2*numArrows));
+% startIx = stepSize+1;
+stepDist = totalArcLen/numArrows;
+startDist = stepDist/2;
+
 for n = 1:numArrows
-    ix = startIx+(n-1)*stepSize;
-    
-    if(ix > length(xdata))
+    % ix = startIx+(n-1)*2*stepSize;
+    % 
+    % if(ix > length(xdata))
+    %     break;
+    % end
+    currentArc = startDist+(n-1)*stepDist;
+
+    if currentArc > totalArcLen
         break;
     end
     
-    loc = [xdata(ix), ydata(ix), zdata(ix)];
+    % loc = [xdata(ix), ydata(ix), zdata(ix)];
+    loc = [interp1(cumArcLen, xdata(:), currentArc, 'pchip'), interp1(cumArcLen, ydata(:), currentArc, 'pchip'), interp1(cumArcLen, zdata(:), currentArc, 'pchip')];
     
-    if(ix < length(xdata))
-        dir = [xdata(ix+1), ydata(ix+1), zdata(ix+1)] - loc;
+    % if(ix < length(xdata))
+    %     dir = [xdata(ix+1), ydata(ix+1), zdata(ix+1)] - loc;
+    % else
+    %     dir = loc - [xdata(ix-1), ydata(ix-1), zdata(ix-1)];
+    % end
+    deltaS = 1E-3*totalArcLen; 
+    if currentArc+deltaS <= totalArcLen
+        locAhead = [interp1(cumArcLen, xdata(:), currentArc + deltaS, 'pchip'), interp1(cumArcLen, ydata(:), currentArc + deltaS, 'pchip'), interp1(cumArcLen, zdata(:), currentArc + deltaS, 'pchip')];
+        dir = locAhead-loc;
     else
-        dir = loc - [xdata(ix-1), ydata(ix-1), zdata(ix-1)];
+        locBehind = [interp1(cumArcLen, xdata(:), currentArc - deltaS, 'pchip'), interp1(cumArcLen, ydata(:), currentArc - deltaS, 'pchip'), interp1(cumArcLen, zdata(:), currentArc - deltaS, 'pchip')];
+        dir = loc-locBehind;
     end
-    
+
     % Normalize length of dir and flip it if desired
     dir = 0.1*(-1)^flipDir * dir/norm(dir);
 

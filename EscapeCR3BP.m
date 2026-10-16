@@ -1,7 +1,7 @@
 %%% EscapeCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 16 June 2026
-%%% U: 8 October 2026
+%%% U: 13 October 2026
 
 clear
 
@@ -316,6 +316,9 @@ tPeri3 = assistOrbitData.tPeri3;
 
 %% Assist Escape Sample
 sampleIdx = 1;
+% 1: perigee 6
+% 2: perigee 4
+
 solOrbit = ode89(odeCR3BPEM, [0 orbitP], orbitIC, odeOpts);
 
 tInterp = [0:(0.05*3600*24/tstarEM):(t0s(sampleIdx)+12*pi), t0s(sampleIdx)+12*pi];
@@ -422,7 +425,7 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % % p193 = plot3WithArrows(solTraj0.y(1,:), solTraj0.y(2,:), solTraj0.y(3,:), 'Color', 'm', 'NumArrows', 10, 'ArrowScale', 1);
 % % set(p193, 'HandleVisibility', 'off')
 % % plot3(solArc0.y(1,:), solArc0.y(2,:), solArc0.y(3,:), 'm', 'HandleVisibility', 'off')
-% p194 = plot3WithArrows(solArc0.y(1,:), solArc0.y(2,:), solArc0.y(3,:), 'Color', 'm', 'NumArrows', 2, 'ArrowScale', 3);
+% p194 = plot3WithArrows(solArc0.y(1,:), solArc0.y(2,:), solArc0.y(3,:), 'Color', 'm', 'NumArrows', 2, 'ArrowScale', 2);
 % set(p194, 'HandleVisibility', 'off')
 % if tPeri1 > 0
 %     % plot3(solArc1.y(1,:), solArc1.y(2,:), solArc1.y(3,:), 'm', 'HandleVisibility', 'off')
@@ -431,20 +434,20 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % end
 % if tPeri2 > 0
 %     plot3(solArc2.y(1,:), solArc2.y(2,:), solArc2.y(3,:), 'b', 'DisplayName', "Esc. Traj.")
-%     % p196 = plot3WithArrows(solArc2.y(1,:), solArc2.y(2,:), solArc2.y(3,:), 'Color', 'b', 'NumArrows', 5, 'ArrowScale', 1.5);
+%     % p196 = plot3WithArrows(solArc2.y(1,:), solArc2.y(2,:), solArc2.y(3,:), 'Color', 'b', 'NumArrows', 5, 'ArrowScale', 1.25);
 %     % set(p196, 'HandleVisibility', 'off')
 %     % % plot3(solTraj1.y(1,:), solTraj1.y(2,:), solTraj1.y(3,:), 'b', 'HandleVisibility', 'off')
-%     % p197 = plot3WithArrows(solTraj1.y(1,:), solTraj1.y(2,:), solTraj1.y(3,:), 'Color', 'b', 'NumArrows', 10, 'ArrowScale', 0.25);
+%     % p197 = plot3WithArrows(solTraj1.y(1,:), solTraj1.y(2,:), solTraj1.y(3,:), 'Color', 'b', 'NumArrows', 50, 'ArrowScale', 0.1);
 %     % set(p197, 'HandleVisibility', 'off')
 % end
 % plot3(solArc3.y(1,:), solArc3.y(2,:), solArc3.y(3,:), 'c', 'DisplayName', "Flyby Traj.")
-% % p198 = plot3WithArrows(solArc3.y(1,:), solArc3.y(2,:), solArc3.y(3,:), 'Color', 'c', 'NumArrows', 2, 'ArrowScale', 3);
+% % p198 = plot3WithArrows(solArc3.y(1,:), solArc3.y(2,:), solArc3.y(3,:), 'Color', 'c', 'NumArrows', 2, 'ArrowScale', 2);
 % % set(p198, 'HandleVisibility', 'off')
 % % plot3(solTraj2.y(1,:), solTraj2.y(2,:), solTraj2.y(3,:), 'c', 'HandleVisibility', 'off')
-% p199 = plot3WithArrows(solTraj2.y(1,:), solTraj2.y(2,:), solTraj2.y(3,:), 'Color', 'c', 'NumArrows', 10, 'ArrowScale', 0.15);
+% p199 = plot3WithArrows(solTraj2.y(1,:), solTraj2.y(2,:), solTraj2.y(3,:), 'Color', 'c', 'NumArrows', 50, 'ArrowScale', 0.05);
 % set(p199, 'HandleVisibility', 'off')
 % % plot3(solTraj3.y(1,:), solTraj3.y(2,:), solTraj3.y(3,:), 'g', 'DisplayName', "Final Traj.")
-% p1911 = plot3WithArrows(solTraj3.y(1,:), solTraj3.y(2,:), solTraj3.y(3,:), 'Color', 'g', 'NumArrows', 10, 'ArrowScale', 0.05);
+% p1911 = plot3WithArrows(solTraj3.y(1,:), solTraj3.y(2,:), solTraj3.y(3,:), 'Color', 'g', 'NumArrows', 50, 'ArrowScale', 0.025);
 % set(p1911, 'DisplayName', "Final Traj.")
 % % % scatter3(qPeri0(1), qPeri0(2), qPeri0(3), 20, 'y', 'filled', 'DisplayName', "Peri. 0")
 % if abs(Deltav1) > 0
@@ -458,6 +461,7 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % end
 % axis equal
 % % axis([-1.25 1.25 -1.25 1.25])
+% axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
 % grid on
 % xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
 % ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
@@ -470,7 +474,7 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % hold off
 % ax19 = gca;
 % ax19.SortMethod = 'childorder';
-% % exportgraphics(fig19, 'EscapeCR3BP_19.png','BackgroundColor', 'k')
+% exportgraphics(fig19, 'EscapeCR3BP_19.png','BackgroundColor', 'k')
 
 % fig20 = figure("Position", [200 100 1200 750]);
 % hold on
@@ -975,8 +979,8 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % % close(v);
 
 %% Test Trajectory
-% xSample = -0.0741483;
-% ySample = -0.214429;
+% xSample = -0.0793587;
+% ySample = -0.372745;
 % idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
 % Perigee
 % idx = 46420 % Direct
@@ -990,7 +994,7 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % q = map.q(:,idx);
 % % q = initialStates(:,trajIdx);
 % disp("Sample IC: ["+q(1)+", "+q(2)+", "+q(3)+", "+q(4)+", "+q(5)+", "+q(6)+"]")
-% tau = -2*pi;
+% tau = 2*pi;
 % sol = ode89(odeCR3BPEM, [0 tau], q, odeOpts);
 
 % fig2 = figure("Position", [200 100 1200 750]);
@@ -1730,8 +1734,8 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % % exportgraphics(fig5, 'EscapeCR3BP_5.png','BackgroundColor', 'k')
 
 %% Import JC Volume Data
-% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_1_peri_pro_500_2.9_3.17.mat';
-% volumeDataFile = 'CR3BPJCVolume_2_apo_retro_500_2.9_3.17_new.mat';
+% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_2_peri_retro_500_2.9_3.17.mat';
+% volumeDataFile = 'CR3BPJCVolume_2_peri_retro_500_2.9_3.17_new.mat';
 
 % volumeFields = who('-file', volumeFile);
 % nVolume = length(volumeFields);
@@ -1783,19 +1787,19 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % ylabel(ax3, "$y$ [E-M ndim]", 'Interpreter', 'latex')
 % view(ax3, 2)
 % 
-% [Earth, ~, ~, ~] = plot3DBodyVid(ax3, "Earth", RE/lstarEM, [-muEM, 0, 0]);
-% set(Earth, 'DisplayName', "Earth")
+% % [Earth, ~, ~, ~] = plot3DBodyVid(ax3, "Earth", RE/lstarEM, [-muEM, 0, 0]);
+% % set(Earth, 'DisplayName', "Earth")
 % [Moon, ~, ~, ~] = plot3DBodyVid(ax3, "Moon", Rm/lstarEM, [1-muEM, 0, 0]);
 % set(Moon, 'DisplayName', "Moon")
 % 
-% scatSize = 1.75;
-% % scatSize = 7.5;
+% % scatSize = 1.75;
+% scatSize = 7.5;
 % hist3 = scatter(NaN(1, nSample), NaN(1, nSample), scatSize, repmat(colorMap(7,:), nSample, 1), 'filled', 'HandleVisibility', 'off');
 % 
-% xlim(ax3, [-1.25 1.25])
-% ylim(ax3, [-1.25 1.25])
-% % xlim(ax3, [1-muEM-0.2 1-muEM+0.2])
-% % ylim(ax3, [-0.2 0.2])
+% % xlim(ax3, [-1.25 1.25])
+% % ylim(ax3, [-1.25 1.25])
+% xlim(ax3, [1-muEM-0.3 1-muEM+0.3])
+% ylim(ax3, [-0.3 0.3])
 % 
 % scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
 % scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
@@ -1884,7 +1888,7 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % pointColors = zeros(length(totalDeltavs), 3);
 % DeltavColors = rdbuInvert(1000);
 % % DeltavColors = rdbu(1000);
-% % maxDeltav = 30;
+% % maxDeltav = 20;
 % maxDeltav = 50;
 % parfor j = 1:n
 %     if isnan(totalDeltavs(j))
@@ -1932,7 +1936,7 @@ disp("Total Delta-v: "+(Deltav1+Deltav2+Deltav3)*1000*lstarEM/tstarEM+" m/s")
 % cb12.Ticks = -maxDeltav:10:maxDeltav;
 % cb12.TickLabels = [string(-maxDeltav)+"+", string(-(maxDeltav-10):10:maxDeltav-10), string(maxDeltav)+"+"];
 % ylabel(cb12, "$\Delta v$ [m/s]", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% % cb12.Label.Position = cb12.Label.Position+[-3 31 0];
+% % cb12.Label.Position = cb12.Label.Position+[-3 21 0];
 % cb12.Label.Position = cb12.Label.Position+[-3 51 0];
 % % colormap(copper)
 % % cb12 = colorbar;
