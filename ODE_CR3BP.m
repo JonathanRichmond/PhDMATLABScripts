@@ -5,7 +5,7 @@
 function dqdt = ODE_CR3BP(~, q, mu)
 
 x = q(1);
-y= q(2);
+y = q(2);
 z = q(3);
 xdot = q(4);
 ydot = q(5);

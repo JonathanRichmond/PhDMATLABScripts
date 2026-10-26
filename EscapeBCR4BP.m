@@ -291,15 +291,15 @@ difColorMap(4,:) = [0.78, 0.72, 0.66]; % Robust capture
 difColorMap(5,:) = [0, 0, 0]; % Invalid apse
 difColorMap(6,:) = [1, 1, 1]; % ZVC
 
-flagsDif = flags;
-flagsDif((flags < 6) & (flagsCR3BP < 6)) = 1; % Robust escape
-flagsDif((flags >= 6) & (flagsCR3BP < 6)) = 2; % Solar-inhibited escape
-flagsDif((flags < 6) & (flagsCR3BP >= 6)) = 3; % Solar-assisted escape
-flagsDif((flags >= 6) & (flagsCR3BP >= 6)) = 4; % Robust capture
-flagsDif(flags == 8) = 5; % Invalid apse
-flagsDif(flags == 9) = 6; % ZVC
-
 %% Difference Map
+% flagsDif = flags;
+% flagsDif((flags < 6) & (flagsCR3BP < 6)) = 1; % Robust escape
+% flagsDif((flags >= 6) & (flagsCR3BP < 6)) = 2; % Solar-inhibited escape
+% flagsDif((flags < 6) & (flagsCR3BP >= 6)) = 3; % Solar-assisted escape
+% flagsDif((flags >= 6) & (flagsCR3BP >= 6)) = 4; % Robust capture
+% flagsDif(flags == 8) = 5; % Invalid apse
+% flagsDif(flags == 9) = 6; % ZVC
+% 
 % fig2 = figure("Position", [200 100 1200 750]);
 % hold on
 % scatter(xGrid, yGrid, 1.75, difColorMap(flagsDif,:), 'filled', 'HandleVisibility', 'off')
@@ -307,10 +307,10 @@ flagsDif(flags == 9) = 6; % ZVC
 % set(Earth, 'DisplayName', "Earth")
 % Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
 % set(Moon, 'DisplayName', "Moon")
-% scatter(nan, nan, 20, difColorMap(1,:), 'filled', 'DisplayName', "Robust escape")
-% scatter(nan, nan, 20, difColorMap(2,:), 'filled', 'DisplayName', "Solar-inhibited escape")
-% scatter(nan, nan, 20, difColorMap(3,:), 'filled', 'DisplayName', "Solar-assisted escape")
-% scatter(nan, nan, 20, difColorMap(4,:), 'filled', 'DisplayName', "Robust capture")
+% scatter(nan, nan, 20, difColorMap(1,:), 'filled', 'DisplayName', "Robust Escape")
+% scatter(nan, nan, 20, difColorMap(2,:), 'filled', 'DisplayName', "Solar-Inhibited Escape")
+% scatter(nan, nan, 20, difColorMap(3,:), 'filled', 'DisplayName', "Solar-Assisted Escape")
+% scatter(nan, nan, 20, difColorMap(4,:), 'filled', 'DisplayName', "Robust Capture/Impact")
 % scatter(nan, nan, 20, difColorMap(6,:), 'filled', 'DisplayName', "ZVC")
 % axis equal
 % if primary == "Moon"
@@ -329,93 +329,95 @@ flagsDif(flags == 9) = 6; % ZVC
 % hold off
 % ax2 = gca;
 % ax2.SortMethod = 'childorder';
-% exportgraphics(fig2, 'EscapeBCR4BP_2.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig2, 'EscapeBCR4BP_2.png', 'BackgroundColor', 'k')
 % % exportgraphics(fig2, 'EscapeBCR4BP_2.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Propagators
-odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
+odeCR3BPEM = @(t,r) ODE_CR3BP_JC(t, r, muEM, m4, a4, mS, mstarEM);
 odeBCR4BPEM = @(t,r) ODE_BCR4BP(t, r, muEM, m4, a4, mS, mstarEM);
 odeOpts = odeset('RelTol', 1E-12, 'AbsTol', 1E-12);
 
 %% Test Trajectory
-xSample = -0.0456914;
-ySample = 0.579559;
-idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5));
+% xSample = -0.0216433;
+% ySample = 0.502605;
+% idx = find((abs(xGrid-xSample) < 1E-5) & (abs(yGrid-ySample) < 1E-5))
+% % idx = 120003; % Solar-Assisted Escape
+% 
+% q = [map.q(:,idx); JC];
+% disp("Sample IC: ["+q(1)+", "+q(2)+", "+q(3)+", "+q(4)+", "+q(5)+", "+q(6)+", "+q(7)+"]")
+% tau = 12*pi;
+% solCR3BP = ode89(odeCR3BPEM, [0 tau], q, odeOpts);
+% solBCR4BP = ode89(odeBCR4BPEM, [0, tau], q(1:7), odeOpts);
+% instJC = zeros(size(solBCR4BP.x));
+% for j = 1:length(instJC)
+%     instJC(j) = getJC(muEM, solBCR4BP.y(:,j));
+% end
+% periIndices = find(abs(periapsesIndices-idx) < 1E-5);
+% peris = periapses(:,periIndices(1):periIndices(end));
+% thetaSdot = sqrt((mS/mstarEM+1)/(a4^3))-1;
+% periTimes = peris(7,:)./thetaSdot;
+% periJCs = zeros(size(periTimes));
+% for j = 1:length(periTimes)
+%     periJCs(j) = getJC(muEM, peris(:,j));
+% end
 
-q = map.q(:,idx);
-disp("Sample IC: ["+q(1)+", "+q(2)+", "+q(3)+", "+q(4)+", "+q(5)+", "+q(6)+", "+q(7)+"]")
-tau = 10*pi;
-solCR3BP = ode89(odeCR3BPEM, [0 tau], q(1:6), odeOpts);
-solBCR4BP = ode89(odeBCR4BPEM, [0, tau], q, odeOpts);
-instJC = zeros(size(solBCR4BP.x));
-for j = 1:length(instJC)
-    instJC(j) = getJC(muEM, solBCR4BP.y(:,j));
-end
-periIndices = find(abs(periapsesIndices-idx) < 1E-5);
-peris = periapses(:,periIndices(1):periIndices(end));
-thetaSdot = sqrt((mS/mstarEM+1)/(a4^3))-1;
-periTimes = peris(7,:)./thetaSdot;
-periJCs = zeros(size(periTimes));
-for j = 1:length(periTimes)
-    periJCs(j) = getJC(muEM, peris(:,j));
-end
+% fig4 = figure("Position", [200 100 1200 750]);
+% hold on
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
+% scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
+% scatter3(solCR3BP.y(1,1), solCR3BP.y(2,1), solCR3BP.y(3,1), 50, 'g', 'filled', 'DisplayName', "Start")
+% p41 = plot3WithArrows(solCR3BP.y(1,:), solCR3BP.y(2,:), solCR3BP.y(3,:), 'Color', colorMap(flagsCR3BP(idx)+1,:), 'NumArrows', 5);
+% set(p41, 'DisplayName', "CR3BP")
+% p42 = plot3WithArrows(solBCR4BP.y(1,:), solBCR4BP.y(2,:), solBCR4BP.y(3,:), 'Color', colorMap(flags(idx)+1,:), 'NumArrows', 10, 'ArrowScale', 0.2);
+% set(p42, 'DisplayName', "$\theta_{S}=0$")
+% scatter3(peris(1,:), peris(2,:), peris(3,:), 50, 'm', 'filled', 'DisplayName', "Periapses")
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.2 1-muEM+0.2 -0.2 0.2])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% grid on
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.", 'Interpreter', 'latex')
+% leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg4.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax4 = gca;
+% ax4.SortMethod = 'childorder';
+% % exportgraphics(fig4, 'EscapeBCR4BP_4.png','BackgroundColor', 'k')
 
-fig4 = figure("Position", [200 100 1200 750]);
-hold on
-Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-scatter3(a1EM, 0, 0, 20, 'r', 'filled', 'd', 'DisplayName', "EM $L_{1}$")
-scatter3(a2EM, 0, 0, 20, [1 0.5 0], 'filled', 'd', 'DisplayName', "EM $L_{2}$")
-scatter3(solCR3BP.y(1,1), solCR3BP.y(2,1), solCR3BP.y(3,1), 50, 'g', 'filled', 'DisplayName', "Start")
-p41 = plot3WithArrows(solCR3BP.y(1,:), solCR3BP.y(2,:), solCR3BP.y(3,:), 'Color', colorMap(flagsCR3BP(idx)+1,:), 'NumArrows', 5);
-set(p41, 'DisplayName', "CR3BP")
-p42 = plot3WithArrows(solBCR4BP.y(1,:), solBCR4BP.y(2,:), solBCR4BP.y(3,:), 'Color', colorMap(flags(idx)+1,:), 'NumArrows', 10, 'ArrowScale', 0.2);
-set(p42, 'DisplayName', "$\theta_{S}=0$")
-scatter3(peris(1,:), peris(2,:), peris(3,:), 50, 'm', 'filled', 'DisplayName', "Periapses")
-axis equal
-if primary == "Moon"
-    axis([1-muEM-0.2 1-muEM+0.2 -0.2 0.2])
-else
-    axis([-1.25 1.25 -1.25 1.25])
-end
-grid on
-xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-title("Earth-Moon Rot.", 'Interpreter', 'latex')
-leg4 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-drawnow;
-set(leg4.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(2)
-hold off
-ax4 = gca;
-ax4.SortMethod = 'childorder';
-exportgraphics(fig4, 'EscapeBCR4BP_4.png','BackgroundColor', 'k')
-
-fig5 = figure("Position", [200 100 1200 750]);
-hold on
-yline(JC, 'w--', 'LineWidth', 1, 'DisplayName', "CR3BP");
-plot(solBCR4BP.x, instJC, 'DisplayName', "Inst. JC")
-xline(2*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
-xline(4*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
-xline(6*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
-scatter(periTimes, periJCs, 50, 'm', 'filled', 'DisplayName', "Periapses")
-ylim([JC-0.025 JC+0.025])
-xlabel("$\tau$ [E-M ndim]", 'Interpreter', 'latex')
-ylabel("JC", 'Interpreter', 'latex')
-leg5 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-set(gca, 'Color', 'k');
-view(2)
-hold off
-ax5 = gca;
-ax5.SortMethod = 'childorder';
-exportgraphics(fig5, 'EscapeBCR4BP_5.png', 'BackgroundColor', 'k')
+% fig5 = figure("Position", [200 100 1200 750]);
+% hold on
+% yline(JC, 'w--', 'LineWidth', 1, 'DisplayName', "CR3BP");
+% plot(solBCR4BP.x, instJC, 'DisplayName', "Inst. JC")
+% plot(solCR3BP.x, solCR3BP.y(8,:), 'y', 'DisplayName', "Est. JC")
+% xline(2*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
+% xline(4*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
+% xline(6*pi/-thetaSdot, 'w:', 'LineWidth', 1, 'HandleVisibility', 'off')
+% scatter(periTimes, periJCs, 50, 'm', 'filled', 'DisplayName', "Periapses")
+% axis([0 25 JC-0.025 JC+0.025])
+% xlabel("$\tau$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("JC", 'Interpreter', 'latex')
+% leg5 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax5 = gca;
+% ax5.SortMethod = 'childorder';
+% % exportgraphics(fig5, 'EscapeBCR4BP_5.png', 'BackgroundColor', 'k')
 
 %% Import Sun Angle Volume Data
-% volumeFile = 'E:/ApseMapData/BCR4BPthetaVolume_1_peri_pro_500_3.0663.mat';
-% volumeDataFile = 'BCR4BPthetaVolume_1_peri_pro_500_3.0663.mat';
+volumeFile = 'E:/ApseMapData/BCR4BPthetaVolume_1_peri_pro_500_3.0663.mat';
+volumeDataFile = 'BCR4BPthetaVolume_1_peri_pro_500_3.0663_new.mat';
 
 % volumeFields = who('-file', volumeFile);
 % nVolume = length(volumeFields);
@@ -450,10 +452,10 @@ exportgraphics(fig5, 'EscapeBCR4BP_5.png', 'BackgroundColor', 'k')
 % save(volumeDataFile, "thetaVolume", "countsVolume", "flagsVolume", "qVolume", "-v7.3");
 
 %% Load Sun Angle Volume Data
-% load(volumeDataFile, "thetaVolume", "flagsVolume", "qVolume");
-% nVolume = length(thetaVolume);
-% nSample = size(qVolume, 2);
-% disp("Successfully loaded volume data from MAT file!")
+load(volumeDataFile, "thetaVolume", "flagsVolume", "qVolume");
+nVolume = length(thetaVolume);
+nSample = size(qVolume, 2);
+disp("Successfully loaded volume data from MAT file!")
 
 %% Sun Angle Animation
 % fig3 = figure('Position', [200 100 1200 750]);
@@ -514,3 +516,87 @@ exportgraphics(fig5, 'EscapeBCR4BP_5.png', 'BackgroundColor', 'k')
 % 
 % % writeVideo(v, getframe(fig3));
 % % close(v);
+
+%% Full Range Difference Map
+flagsDifFull = flagsCR3BP;
+flagsDifFull(all(flagsVolume < 6, 1).' & (flagsCR3BP < 6)) = 1; % Robust escape
+flagsDifFull(any(flagsVolume >= 6, 1).' & (flagsCR3BP < 6)) = 2; % Solar-inhibited escape
+flagsDifFull(any(flagsVolume < 6, 1).' & (flagsCR3BP >= 6)) = 3; % Solar-assisted escape
+flagsDifFull(all(flagsVolume >= 6, 1).' & (flagsCR3BP >= 6)) = 4; % Robust capture
+flagsDifFull(flagsCR3BP == 8) = 5; % Invalid apse
+flagsDifFull(flagsCR3BP == 9) = 6; % ZVC
+
+% fig6 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, difColorMap(flagsDifFull,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 20, difColorMap(1,:), 'filled', 'DisplayName', "Robust Escape")
+% scatter(nan, nan, 20, difColorMap(2,:), 'filled', 'DisplayName', "Solar-Inhibited Escape")
+% scatter(nan, nan, 20, difColorMap(3,:), 'filled', 'DisplayName', "Solar-Assisted Escape")
+% scatter(nan, nan, 20, difColorMap(4,:), 'filled', 'DisplayName', "Robust Capture/Impact")
+% scatter(nan, nan, 20, difColorMap(6,:), 'filled', 'DisplayName', "ZVC")
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
+% leg6 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg6.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax6 = gca;
+% ax6.SortMethod = 'childorder';
+% % exportgraphics(fig6, 'EscapeBCR4BP_6.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig6, 'EscapeBCR4BP_6.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+
+%% Area Analysis
+esc0 = zeros(nVolume, 1);
+esc1 = zeros(nVolume, 1);
+esc2 = zeros(nVolume, 1);
+esc3 = zeros(nVolume, 1);
+esc4 = zeros(nVolume, 1);
+esc5 = zeros(nVolume, 1);
+capture = zeros(nVolume, 1);
+impact = zeros(nVolume, 1);
+parfor j = 1:nVolume
+    esc0(j,1) = length(find(flagsVolume(j,:) == 0));
+    esc1(j,1) = length(find(flagsVolume(j,:) == 1));
+    esc2(j,1) = length(find(flagsVolume(j,:) == 2));
+    esc3(j,1) = length(find(flagsVolume(j,:) == 3));
+    esc4(j,1) = length(find(flagsVolume(j,:) == 4));
+    esc5(j,1) = length(find(flagsVolume(j,:) == 5));
+    capture(j,1) = length(find(flagsVolume(j,:) == 6));
+    impact(j,1) = length(find(flagsVolume(j,:) == 7));
+end
+escape = esc0+esc1+esc2+esc3+esc4+esc5;
+escCR3BP = length(find(flagsCR3BP < 6));
+escRobust = length(find(flagsDifFull == 1));
+escBCR4BP = length(find(flagsDifFull < 4));
+
+fig7 = figure("Position", [200 100 1200 750]);
+hold on
+plot(thetaVolume.*180./pi, 100.*escape./nSample, 'b', 'DisplayName', "Total Esc.")
+plot(thetaVolume.*180./pi, 100.*esc0./nSample, 'Color', colorMap(1,:), 'DisplayName', "Direct Esc.")
+yline(100*escCR3BP/nSample, 'y--', 'DisplayName', "CR3BP Esc.")
+yline(100*escRobust/nSample, 'w--', 'DisplayName', "Robust Esc.")
+yline(100*escBCR4BP/nSample, 'g--', 'DisplayName', "BCR4BP Feas. Esc.")
+xlim([0 360])
+xlabel("$\theta_{S}$ [E-M ndim]", 'Interpreter', 'latex')
+ylabel("Area [\%]", 'Interpreter', 'latex')
+title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
+leg7 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+set(gca, 'Color', 'k');
+view(2)
+hold off
+ax7 = gca;
+ax7.SortMethod = 'childorder';
+% exportgraphics(fig7, 'EscapeBCR4BP_7.png', 'BackgroundColor', 'k')
