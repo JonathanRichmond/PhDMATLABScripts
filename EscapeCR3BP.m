@@ -1,7 +1,7 @@
 %%% EscapeCR3BP.jl
 %%% Jonathan LeFevre Richmond
 %%% C: 16 June 2026
-%%% U: 19 October 2026
+%%% U: 27 October 2026
 
 clear
 
@@ -242,50 +242,50 @@ colorMap(10,:) = [1, 1, 1]; % ZVC
 % trajIdx = 141 % Capture
 
 %% Map
-fig1 = figure("Position", [200 100 1200 750]);
-hold on
-scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
-Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
-set(Earth, 'DisplayName', "Earth")
-Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
-set(Moon, 'DisplayName', "Moon")
-scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
-scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
-scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
-% scatter(xPeri, yPeri, 30, 'm', 'filled', 'DisplayName', "Manifold Peris.")
-% scatter(xPeri(63), yPeri(63), 50, 'g', 'filled', 'DisplayName', "Sample 1")
-% scatter(xPeri(75), yPeri(75), 50, 'c', 'filled', 'DisplayName', "Sample 2")
-% scatter(periStates(1,trajIdx), periStates(2,trajIdx), 50, 'g', 'filled', 'DisplayName', "Sample")
-% scatter(sol1.y(1,1), sol1.y(2,1), 50, 'c', 'filled', 'DisplayName', "Selected Peri.")
-% scatter(sol2.y(1,1), sol2.y(2,1), 50, 'c', 'filled', 'DisplayName', "Selected Peri.")
-% scatter3(trajPeriStates(1,:), trajPeriStates(2,:), trajPeriStates(3,:), 50, 'c', 'o', 'filled', 'HandleVisibility', 'off')
-axis equal
-if primary == "Moon"
-    axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
-else
-    axis([-1.25 1.25 -1.25 1.25])
-end
-xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
-ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
-title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
-colormap(colorMap(1:6,:))
-cb1 = colorbar;
-clim([-0.5 5.5])
-cb1.Ticks = 0:5;
-cb1.TickLabels = [string(0:4), "5+"];
-ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-% ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
-leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
-drawnow;
-set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
-set(gca, 'Color', 'k');
-view(2)
-hold off
-ax1 = gca;
-ax1.SortMethod = 'childorder';
-% exportgraphics(fig1, 'EscapeCR3BP_1.png', 'BackgroundColor', 'k')
-% exportgraphics(fig1, 'EscapeCR3BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
+% fig1 = figure("Position", [200 100 1200 750]);
+% hold on
+% scatter(xGrid, yGrid, 1.75, colorMap(flags+1,:), 'filled', 'HandleVisibility', 'off')
+% Earth = plot3DBody("Earth", RE/lstarEM, [-muEM, 0, 0]);
+% set(Earth, 'DisplayName', "Earth")
+% Moon = plot3DBody("Moon", Rm/lstarEM, [1-muEM, 0, 0]);
+% set(Moon, 'DisplayName', "Moon")
+% scatter(nan, nan, 20, colorMap(7,:), 'filled', 'DisplayName', "Capture")
+% scatter(nan, nan, 20, colorMap(8,:), 'filled', 'DisplayName', "Impact")
+% scatter(nan, nan, 20, colorMap(10,:), 'filled', 'DisplayName', "ZVC")
+% % scatter(xPeri, yPeri, 30, 'm', 'filled', 'DisplayName', "Manifold Peris.")
+% % scatter(xPeri(63), yPeri(63), 50, 'g', 'filled', 'DisplayName', "Sample 1")
+% % scatter(xPeri(75), yPeri(75), 50, 'c', 'filled', 'DisplayName', "Sample 2")
+% % scatter(periStates(1,trajIdx), periStates(2,trajIdx), 50, 'g', 'filled', 'DisplayName', "Sample")
+% % scatter(sol1.y(1,1), sol1.y(2,1), 50, 'c', 'filled', 'DisplayName', "Selected Peri.")
+% % scatter(sol2.y(1,1), sol2.y(2,1), 50, 'c', 'filled', 'DisplayName', "Selected Peri.")
+% % scatter3(trajPeriStates(1,:), trajPeriStates(2,:), trajPeriStates(3,:), 50, 'c', 'o', 'filled', 'HandleVisibility', 'off')
+% axis equal
+% if primary == "Moon"
+%     axis([1-muEM-0.3 1-muEM+0.3 -0.3 0.3])
+% else
+%     axis([-1.25 1.25 -1.25 1.25])
+% end
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% title("Earth-Moon Rot.: JC = "+JC, 'Interpreter', 'latex')
+% colormap(colorMap(1:6,:))
+% cb1 = colorbar;
+% clim([-0.5 5.5])
+% cb1.Ticks = 0:5;
+% cb1.TickLabels = [string(0:4), "5+"];
+% ylabel(cb1, "Periapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% % ylabel(cb1, "Apoapses", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb1.Label.Position = cb1.Label.Position+[-2.3 3.1 0];
+% leg1 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% drawnow;
+% set(leg1.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% set(gca, 'Color', 'k');
+% view(2)
+% hold off
+% ax1 = gca;
+% ax1.SortMethod = 'childorder';
+% % exportgraphics(fig1, 'EscapeCR3BP_1.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig1, 'EscapeCR3BP_1.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% Propagators
 odeCR3BPEM = @(t,r) ODE_CR3BP(t, r, muEM);
@@ -1740,8 +1740,8 @@ disp("Total TOF: "+tInterp(end)*tstarEM/3600/24+ " d")
 % % exportgraphics(fig5, 'EscapeCR3BP_5.png','BackgroundColor', 'k')
 
 %% Import JC Volume Data
-% volumeFile = 'E:/ApseMapData/CR3BPJCVolume_2_peri_retro_500_2.9_3.17.mat';
-% volumeDataFile = 'CR3BPJCVolume_2_peri_retro_500_2.9_3.17_new.mat';
+volumeFile = 'E:/ApseMapData/CR3BPJCVolume_1_peri_pro_500_2.9_3.17.mat';
+volumeDataFile = 'CR3BPJCVolume_1_peri_pro_500_2.9_3.17_new.mat';
 
 % volumeFields = who('-file', volumeFile);
 % nVolume = length(volumeFields);
@@ -1776,10 +1776,49 @@ disp("Total TOF: "+tInterp(end)*tstarEM/3600/24+ " d")
 % save(volumeDataFile, "JCVolume", "countsVolume", "flagsVolume", "qVolume", "-v7.3");
 
 %% Load JC Volume Data
-% load(volumeDataFile, "JCVolume", "flagsVolume", "qVolume");
-% nVolume = length(JCVolume);
-% nSample = size(qVolume, 2);
-% disp("Successfully loaded volume data from MAT file!")
+load(volumeDataFile, "JCVolume", "flagsVolume", "qVolume");
+nVolume = length(JCVolume);
+nSample = size(qVolume, 2);
+disp("Successfully loaded volume data from MAT file!")
+
+%% JC Volume
+% xVolume = squeeze(qVolume(1,:,:))';
+% yVolume = squeeze(qVolume(2,:,:))';
+% lobe = 0;
+% lobeMask = (flagsVolume == lobe);
+% [row, col] = find(lobeMask);
+% xFilt = xVolume(lobeMask);
+% yFilt = yVolume(lobeMask);
+% zFilt = JCVolume(row);
+% 
+% fig20 = figure("Position", [200 100 1200 750]);
+% hold on
+% % scatter3(xFilt, yFilt, zFilt, 1.75, colorMap(lobe+1,:), 'filled', 'HandleVisibility', 'off')
+% scatter3(xFilt, yFilt, zFilt, 1.75, zFilt, 'filled', 'HandleVisibility', 'off')
+% scatter3(xFilt, yFilt, 2.8*ones(size(xFilt)), 1.75, 0.5*ones(1,3), 'filled', 'HandleVisibility', 'off')
+% d20 = daspect;
+% daspect([1, 1, d20(3)/5])
+% xlabel("$x$ [E-M ndim]", 'Interpreter', 'latex')
+% ylabel("$y$ [E-M ndim]", 'Interpreter', 'latex')
+% zlabel("$JC$", 'Interpreter', 'latex')
+% title("JC Volume: Lobe "+lobe, 'Interpreter', 'latex')
+% colormap(viridis)
+% cb20 = colorbar;
+% clim([2.9 3.17])
+% cb20.Ticks = 2.9:0.03:3.17;
+% ylabel(cb20, "$JC$", 'Interpreter', 'latex', 'Rotation', 0, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+% cb20.Label.Position = cb20.Label.Position+[-3 0.14 0];
+% % leg20 = legend('Location', 'bestoutside', 'Interpreter', 'latex');
+% % drawnow;
+% % set(leg20.EntryContainer.NodeChildren(end).Icon.Transform.Children.Children, 'ColorData', uint8([25; 25; 85; 255]))
+% grid on
+% set(gca, 'Color', 'k');
+% view(3)
+% hold off
+% ax20 = gca;
+% % ax20.SortMethod = 'childorder';
+% % exportgraphics(fig20, 'EscapeCR3BP_20.png', 'BackgroundColor', 'k')
+% % exportgraphics(fig20, 'EscapeCR3BP_20.pdf', 'BackgroundColor', 'w', 'ContentType', 'vector')
 
 %% JC Animation
 % fig3 = figure('Position', [200 100 1200 750]);
